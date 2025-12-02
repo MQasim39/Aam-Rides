@@ -1,34 +1,36 @@
 import React, { useState, useEffect, useRef, createContext, useContext } from 'react';
-import { 
-  StyleSheet, 
+import {
+  StyleSheet,
   Text as RNText,       // <--- Renamed
-  View, 
-  TouchableOpacity, 
+  View,
+  TouchableOpacity,
   TextInput as RNTextInput, // <--- Renamed
-  ScrollView, 
-  StatusBar, 
-  Image, 
-  ActivityIndicator, 
-  Alert, 
-  FlatList, 
-  Animated, 
-  Keyboard, 
-  Modal, 
-  Platform, 
-  KeyboardAvoidingView, 
-  TouchableWithoutFeedback 
+  ScrollView,
+  StatusBar,
+  Image,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Animated,
+  Keyboard,
+  Modal,
+  Platform,
+  KeyboardAvoidingView,
+  TouchableWithoutFeedback
 } from 'react-native';
-const Text = (props) => <RNText {...props} allowFontScaling={false} />;
-const TextInput = (props) => <RNTextInput {...props} allowFontScaling={false} />;
+const Text = (props) => <RNText {...props} style={[{ fontFamily: 'SFPro-Regular' }, props.style]} allowFontScaling={false} />;
+const TextInput = (props) => <RNTextInput {...props} style={[{ fontFamily: 'SFPro-Regular' }, props.style]} allowFontScaling={false} />;
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { LinearGradient } from 'expo-linear-gradient';
-import MapView, { UrlTile, Marker, Polyline } from 'react-native-maps';
+import MapView, { UrlTile, Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Feather, FontAwesome5, MaterialIcons, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
+import { useFonts } from 'expo-font';
+import { BlurView } from 'expo-blur';
 import { initializeApp } from 'firebase/app';
 import { initializeAuth, getReactNativePersistence, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth';
 import { getFirestore, collection, addDoc, query, where, onSnapshot, doc, updateDoc, setDoc, arrayUnion, orderBy, getDoc, serverTimestamp, deleteField } from 'firebase/firestore';
@@ -52,14 +54,14 @@ const auth = initializeAuth(app, { persistence: getReactNativePersistence(AsyncS
 const db = getFirestore(app);
 
 // COLORS
-const COLORS = { 
-  primary: '#FF8C00', 
-  secondary: '#FFB347', 
-  white: '#FFFFFF', 
-  black: '#1A1A1A', 
-  gray: '#8E8E93', 
-  lightGray: '#F2F2F7', 
-  green: '#34C759', 
+const COLORS = {
+  primary: '#FF8C00',
+  secondary: '#FFB347',
+  white: '#FFFFFF',
+  black: '#1A1A1A',
+  gray: '#8E8E93',
+  lightGray: '#F2F2F7',
+  green: '#34C759',
   red: '#FF3B30',
   yellow: '#FFCC00',
   background: '#FAFAFA',
@@ -68,35 +70,197 @@ const COLORS = {
 
 // RIDE CATEGORIES
 const CATEGORIES = {
-  BIKE: { 
-    id: 'kairi', 
-    name: 'Kairi (Fast)', 
+  BIKE: {
+    id: 'kairi',
+    name: 'Kairi (Fast)',
     displayName: 'Bike',
     icon: 'motorcycle',
     pricing: { short: 150, medium: 300, long: 450 }
   },
-  MINI: { 
-    id: 'anwar_ratol', 
-    name: 'Anwar Ratol (Mini)', 
+  MINI: {
+    id: 'anwar_ratol',
+    name: 'Anwar Ratol (Mini)',
     displayName: 'Hatchback (Non-AC)',
     icon: 'car',
     pricing: { short: 250, medium: 450, long: 700 }
   },
-  GO: { 
-    id: 'langra', 
-    name: 'Langra (Go)', 
+  GO: {
+    id: 'langra',
+    name: 'Langra (Go)',
     displayName: 'Hatchback (AC)',
     icon: 'car',
     pricing: { short: 350, medium: 600, long: 850 }
   },
-  PREMIUM: { 
-    id: 'sindhiri', 
-    name: 'Sindhiri (Premium)', 
+  PREMIUM: {
+    id: 'sindhiri',
+    name: 'Sindhiri (Premium)',
     displayName: 'Sedan (AC)',
     icon: 'car',
     pricing: { short: 500, medium: 1000, long: 1400 }
   }
 };
+
+const DARK_MAP_STYLE = [
+  {
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#242f3e"
+      }
+    ]
+  },
+  {
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#746855"
+      }
+    ]
+  },
+  {
+    "elementType": "labels.text.stroke",
+    "stylers": [
+      {
+        "color": "#242f3e"
+      }
+    ]
+  },
+  {
+    "featureType": "administrative.locality",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#d59563"
+      }
+    ]
+  },
+  {
+    "featureType": "poi",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#d59563"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#263c3f"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#6b9a76"
+      }
+    ]
+  },
+  {
+    "featureType": "road",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#38414e"
+      }
+    ]
+  },
+  {
+    "featureType": "road",
+    "elementType": "geometry.stroke",
+    "stylers": [
+      {
+        "color": "#212a37"
+      }
+    ]
+  },
+  {
+    "featureType": "road",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#9ca5b3"
+      }
+    ]
+  },
+  {
+    "featureType": "road.highway",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#746855"
+      }
+    ]
+  },
+  {
+    "featureType": "road.highway",
+    "elementType": "geometry.stroke",
+    "stylers": [
+      {
+        "color": "#1f2835"
+      }
+    ]
+  },
+  {
+    "featureType": "road.highway",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#f3d19c"
+      }
+    ]
+  },
+  {
+    "featureType": "transit",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#2f3948"
+      }
+    ]
+  },
+  {
+    "featureType": "transit.station",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#d59563"
+      }
+    ]
+  },
+  {
+    "featureType": "water",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#17263c"
+      }
+    ]
+  },
+  {
+    "featureType": "water",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#515c6d"
+      }
+    ]
+  },
+  {
+    "featureType": "water",
+    "elementType": "labels.text.stroke",
+    "stylers": [
+      {
+        "color": "#17263c"
+      }
+    ]
+  }
+];
 
 const getVehicleCategory = (vehicleType, hasAC) => {
   if (vehicleType === 'Bike') return CATEGORIES.BIKE;
@@ -109,10 +273,10 @@ const getVehicleCategory = (vehicleType, hasAC) => {
 const calculateFare = (distanceKm, categoryId) => {
   const distance = parseFloat(distanceKm);
   if (distance > 40) return null;
-  
+
   const category = Object.values(CATEGORIES).find(c => c.id === categoryId);
   if (!category) return 200;
-  
+
   if (distance < 10) return category.pricing.short;
   if (distance <= 25) return category.pricing.medium;
   return category.pricing.long;
@@ -124,32 +288,32 @@ const calculateRoadDistance = async (pickup, dropoff) => {
     const response = await fetch(
       `https://api.geoapify.com/v1/routing?waypoints=${pickup.latitude},${pickup.longitude}|${dropoff.latitude},${dropoff.longitude}&mode=drive&apiKey=${GEOAPIFY_KEY}`
     );
-    
+
     const data = await response.json();
-    
+
     if (data.features && data.features.length > 0) {
       const distanceMeters = data.features[0].properties.distance;
       const distanceKm = (distanceMeters / 1000).toFixed(1);
-      
+
       // Get route coordinates for polyline
       const coordinates = data.features[0].geometry.coordinates[0].map(coord => ({
         latitude: coord[1],
         longitude: coord[0]
       }));
-      
+
       return { distance: distanceKm, route: coordinates };
     }
-    
+
     // Fallback to straight-line distance
     const distanceMeters = getDistance(
       { latitude: pickup.latitude, longitude: pickup.longitude },
       { latitude: dropoff.latitude, longitude: dropoff.longitude }
     );
-    return { 
-      distance: (distanceMeters / 1000).toFixed(1), 
-      route: [pickup, dropoff] 
+    return {
+      distance: (distanceMeters / 1000).toFixed(1),
+      route: [pickup, dropoff]
     };
-    
+
   } catch (error) {
     console.log("Road distance error:", error);
     // Fallback
@@ -157,9 +321,9 @@ const calculateRoadDistance = async (pickup, dropoff) => {
       { latitude: pickup.latitude, longitude: pickup.longitude },
       { latitude: dropoff.latitude, longitude: dropoff.longitude }
     );
-    return { 
-      distance: (distanceMeters / 1000).toFixed(1), 
-      route: [pickup, dropoff] 
+    return {
+      distance: (distanceMeters / 1000).toFixed(1),
+      route: [pickup, dropoff]
     };
   }
 };
@@ -172,10 +336,10 @@ const getDistance = (from, to) => {
   const Δφ = (to.latitude - from.latitude) * Math.PI / 180;
   const Δλ = (to.longitude - from.longitude) * Math.PI / 180;
 
-  const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-          Math.cos(φ1) * Math.cos(φ2) *
-          Math.sin(Δλ/2) * Math.sin(Δλ/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) *
+    Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
   return R * c;
 };
@@ -198,7 +362,7 @@ const sendEmailNotification = async (to, subject, templateData) => {
 
 const generateEmailTemplate = (data) => {
   const { type, name, email } = data;
-  
+
   const baseStyle = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
       <div style="background: linear-gradient(135deg, #FF8C00, #FFB347); padding: 30px; text-align: center;">
@@ -206,7 +370,7 @@ const generateEmailTemplate = (data) => {
         <p style="color: #FFF8E1; margin: 5px 0 0 0;">Apni Ride, Bas Ek Click Pe</p>
       </div>
   `;
-  
+
   const footer = `
       <div style="background: #f9f9f9; padding: 20px; text-align: center; border-top: 1px solid #eee;">
         <p style="color: #888; font-size: 12px; margin: 0;">© 2024 Aam Rides. All rights reserved.</p>
@@ -223,7 +387,7 @@ const generateEmailTemplate = (data) => {
       </div>
     ` + footer;
   }
-  
+
   if (type === 'driver_application') {
     return baseStyle + `
       <div style="padding: 30px;">
@@ -236,7 +400,7 @@ const generateEmailTemplate = (data) => {
       </div>
     ` + footer;
   }
-  
+
   if (type === 'driver_approved') {
     return baseStyle + `
       <div style="padding: 30px;">
@@ -246,7 +410,7 @@ const generateEmailTemplate = (data) => {
       </div>
     ` + footer;
   }
-  
+
   if (type === 'driver_rejected') {
     return baseStyle + `
       <div style="padding: 30px;">
@@ -288,12 +452,12 @@ const AuthProvider = ({ children }) => {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color={COLORS.primary}/>
-        <Text style={{marginTop: 10, color: COLORS.gray}}>Loading...</Text>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={{ marginTop: 10, color: COLORS.gray }}>Loading...</Text>
       </View>
     );
   }
-  
+
   return (
     <AuthContext.Provider value={{ user, userRole }}>
       {children}
@@ -318,19 +482,19 @@ function WelcomeScreen({ navigation }) {
   return (
     <LinearGradient colors={['#FF8C00', '#FFAA00', '#FFC837']} style={styles.container}>
       <StatusBar barStyle="light-content" />
-      
+
       <View style={styles.centerContent}>
-        <Animated.View style={{ 
-          opacity: fadeAnim, 
-          transform: [{ translateY: slideAnim }, { scale: scaleAnim }], 
-          alignItems: 'center' 
+        <Animated.View style={{
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
+          alignItems: 'center'
         }}>
           <View style={styles.logoContainerShadow}>
             <View style={styles.logoContainer}>
-              <Image 
-                source={require('./assets/aam.png')} 
-                style={styles.logoImage} 
-                resizeMode="contain" 
+              <Image
+                source={require('./assets/aam.png')}
+                style={styles.logoImage}
+                resizeMode="contain"
               />
             </View>
           </View>
@@ -340,21 +504,21 @@ function WelcomeScreen({ navigation }) {
       </View>
 
       <Animated.View style={[styles.bottomArea, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-        <TouchableOpacity 
-          style={styles.whiteBtn} 
-          activeOpacity={0.9} 
+        <TouchableOpacity
+          style={styles.whiteBtn}
+          activeOpacity={0.9}
           onPress={() => navigation.navigate('Auth', { mode: 'driver' })}
         >
-          <MaterialCommunityIcons name="briefcase" size={22} color={COLORS.primary} style={{marginRight: 10}} />
+          <MaterialCommunityIcons name="briefcase" size={22} color={COLORS.primary} style={{ marginRight: 10 }} />
           <Text style={styles.orangeText}>Start Career (Driver)</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={styles.glassBtn} 
-          activeOpacity={0.8} 
+        <TouchableOpacity
+          style={styles.glassBtn}
+          activeOpacity={0.8}
           onPress={() => navigation.navigate('Auth', { mode: 'rider' })}
         >
-          <MaterialIcons name="location-on" size={22} color="white" style={{marginRight: 10}} />
+          <MaterialIcons name="location-on" size={22} color="white" style={{ marginRight: 10 }} />
           <Text style={styles.whiteBtnText}>Get a Ride</Text>
         </TouchableOpacity>
       </Animated.View>
@@ -368,7 +532,7 @@ function AuthScreen({ route, navigation }) {
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [retypePassword, setRetypePassword] = useState('');
@@ -376,7 +540,7 @@ function AuthScreen({ route, navigation }) {
   const [phone, setPhone] = useState('');
   const [age, setAge] = useState('');
   const [address, setAddress] = useState('');
-  
+
   const [cnic, setCnic] = useState('');
   const [vehicleType, setVehicleType] = useState('Hatchback');
   const [hasAC, setHasAC] = useState(false);
@@ -441,7 +605,7 @@ function AuthScreen({ route, navigation }) {
 
   const handleAuth = async () => {
     if (!validateFields()) return;
-    
+
     Keyboard.dismiss();
     setLoading(true);
 
@@ -462,7 +626,7 @@ function AuthScreen({ route, navigation }) {
 
         if (mode === 'driver') {
           const category = getVehicleCategory(vehicleType, hasAC);
-          
+
           await setDoc(doc(db, "drivers", uid), {
             ...baseData,
             cnic,
@@ -487,7 +651,7 @@ function AuthScreen({ route, navigation }) {
           });
 
           setShowSuccessModal(true);
-          
+
         } else {
           await setDoc(doc(db, "riders", uid), baseData);
 
@@ -505,10 +669,10 @@ function AuthScreen({ route, navigation }) {
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
-      
+
     } catch (error) {
       let errorMessage = "An error occurred";
-      
+
       if (error.code === 'auth/email-already-in-use') {
         errorMessage = "This email is already registered";
       } else if (error.code === 'auth/invalid-email') {
@@ -518,7 +682,7 @@ function AuthScreen({ route, navigation }) {
       } else if (error.code === 'auth/wrong-password') {
         errorMessage = "Incorrect password";
       }
-      
+
       Alert.alert("Error", errorMessage);
     } finally {
       setLoading(false);
@@ -527,29 +691,29 @@ function AuthScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.whiteContainer}>
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === "ios" ? "padding" : "height"} 
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
       >
         <View style={styles.authHeader}>
-          <TouchableOpacity onPress={() => navigation.navigate('Welcome')} style={{padding: 10}}>
+          <TouchableOpacity onPress={() => navigation.navigate('Welcome')} style={{ padding: 10 }}>
             <Ionicons name="arrow-back" size={24} color={COLORS.black} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>
             {mode === 'driver' ? "Captain Portal" : "Rider Account"}
           </Text>
-          <View style={{width: 44}} />
+          <View style={{ width: 44 }} />
         </View>
 
-        <ScrollView 
-          contentContainerStyle={{paddingHorizontal: 25, paddingBottom: 100}} 
+        <ScrollView
+          contentContainerStyle={{ paddingHorizontal: 25, paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={{alignItems: 'center', marginBottom: 25, marginTop: 10}}>
-            <Image 
-              source={require('./assets/aam.png')} 
-              style={{width: 70, height: 70, marginBottom: 15}} 
+          <View style={{ alignItems: 'center', marginBottom: 25, marginTop: 10 }}>
+            <Image
+              source={require('./assets/aam.png')}
+              style={{ width: 70, height: 70, marginBottom: 15 }}
               resizeMode="contain"
             />
             <Text style={styles.authTitle}>
@@ -559,85 +723,85 @@ function AuthScreen({ route, navigation }) {
 
           {isSignUp && (
             <>
-              <TextInput 
-                style={styles.input} 
-                placeholder="Full Name" 
-                value={name} 
-                onChangeText={setName} 
+              <TextInput
+                style={styles.input}
+                placeholder="Full Name"
+                value={name}
+                onChangeText={setName}
                 autoCapitalize="words"
               />
-              
-              <TextInput 
-                style={styles.input} 
-                placeholder="Mobile Number" 
-                value={phone} 
-                onChangeText={setPhone} 
-                keyboardType="phone-pad" 
+
+              <TextInput
+                style={styles.input}
+                placeholder="Mobile Number"
+                value={phone}
+                onChangeText={setPhone}
+                keyboardType="phone-pad"
               />
-              
-              <TextInput 
-                style={styles.input} 
-                placeholder="Age" 
-                value={age} 
-                onChangeText={setAge} 
-                keyboardType="numeric" 
+
+              <TextInput
+                style={styles.input}
+                placeholder="Age"
+                value={age}
+                onChangeText={setAge}
+                keyboardType="numeric"
               />
-              
-              <TextInput 
-                style={styles.input} 
-                placeholder="Home Address" 
-                value={address} 
-                onChangeText={setAddress} 
+
+              <TextInput
+                style={styles.input}
+                placeholder="Home Address"
+                value={address}
+                onChangeText={setAddress}
                 multiline
                 numberOfLines={2}
               />
 
               {mode === 'driver' && (
                 <View style={styles.driverSection}>
-                  <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 15}}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15 }}>
                     <FontAwesome5 name="car" size={18} color={COLORS.primary} />
-                    <Text style={[styles.sectionTitle, {marginLeft: 10, marginBottom: 0}]}>Vehicle Information</Text>
+                    <Text style={[styles.sectionTitle, { marginLeft: 10, marginBottom: 0 }]}>Vehicle Information</Text>
                   </View>
-                  
-                  <TextInput 
-                    style={styles.input} 
-                    placeholder="CNIC Number" 
-                    value={cnic} 
-                    onChangeText={setCnic} 
+
+                  <TextInput
+                    style={styles.input}
+                    placeholder="CNIC Number"
+                    value={cnic}
+                    onChangeText={setCnic}
                     keyboardType="numeric"
                   />
-                  
-                  <TextInput 
-                    style={styles.input} 
-                    placeholder="License Plate (e.g., ABC-123)" 
-                    value={licensePlate} 
-                    onChangeText={setLicensePlate} 
+
+                  <TextInput
+                    style={styles.input}
+                    placeholder="License Plate (e.g., ABC-123)"
+                    value={licensePlate}
+                    onChangeText={setLicensePlate}
                     autoCapitalize="characters"
                   />
-                  
-                  <TextInput 
-                    style={styles.input} 
-                    placeholder="Vehicle Make (e.g., Honda)" 
-                    value={make} 
-                    onChangeText={setMake} 
+
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Vehicle Make (e.g., Honda)"
+                    value={make}
+                    onChangeText={setMake}
                   />
-                  
-                  <TextInput 
-                    style={styles.input} 
-                    placeholder="Vehicle Model (e.g., Civic)" 
-                    value={model} 
-                    onChangeText={setModel} 
+
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Vehicle Model (e.g., Civic)"
+                    value={model}
+                    onChangeText={setModel}
                   />
 
                   <Text style={styles.label}>Vehicle Type</Text>
                   <View style={styles.pillContainer}>
                     {['Bike', 'Hatchback', 'Sedan'].map(type => (
-                      <TouchableOpacity 
-                        key={type} 
-                        onPress={() => setVehicleType(type)} 
+                      <TouchableOpacity
+                        key={type}
+                        onPress={() => setVehicleType(type)}
                         style={[styles.pill, vehicleType === type && styles.pillActive]}
                       >
-                        <Text style={[styles.pillText, vehicleType === type && {color: 'white'}]}>
+                        <Text style={[styles.pillText, vehicleType === type && { color: 'white' }]}>
                           {type}
                         </Text>
                       </TouchableOpacity>
@@ -645,16 +809,16 @@ function AuthScreen({ route, navigation }) {
                   </View>
 
                   {vehicleType !== 'Bike' && (
-                    <TouchableOpacity 
-                      onPress={() => setHasAC(!hasAC)} 
+                    <TouchableOpacity
+                      onPress={() => setHasAC(!hasAC)}
                       style={styles.checkboxRow}
                     >
-                      <MaterialIcons 
-                        name={hasAC ? "check-box" : "check-box-outline-blank"} 
-                        size={24} 
+                      <MaterialIcons
+                        name={hasAC ? "check-box" : "check-box-outline-blank"}
+                        size={24}
                         color={COLORS.primary}
                       />
-                      <Text style={{marginLeft: 10, color: COLORS.black}}>
+                      <Text style={{ marginLeft: 10, color: COLORS.black }}>
                         Vehicle has Air Conditioning
                       </Text>
                     </TouchableOpacity>
@@ -662,22 +826,22 @@ function AuthScreen({ route, navigation }) {
 
                   <View style={styles.categoryBadge}>
                     <MaterialCommunityIcons name="tag" size={16} color={COLORS.primary} />
-                    <Text style={[styles.categoryText, {marginLeft: 8}]}>
+                    <Text style={[styles.categoryText, { marginLeft: 8 }]}>
                       Category: {getVehicleCategory(vehicleType, hasAC).name}
                     </Text>
                   </View>
 
                   <Text style={styles.label}>Driver Photo</Text>
-                  <TouchableOpacity 
-                    onPress={() => pickImage('driver')} 
+                  <TouchableOpacity
+                    onPress={() => pickImage('driver')}
                     style={styles.photoUploadBox}
                   >
                     {driverPhoto ? (
-                      <Image source={{uri: driverPhoto}} style={styles.uploadedImage} />
+                      <Image source={{ uri: driverPhoto }} style={styles.uploadedImage} />
                     ) : (
                       <View style={styles.uploadPlaceholder}>
                         <MaterialIcons name="add-a-photo" size={30} color={COLORS.gray} />
-                        <Text style={{color: COLORS.gray, marginTop: 10}}>
+                        <Text style={{ color: COLORS.gray, marginTop: 10 }}>
                           Upload Driver Photo
                         </Text>
                       </View>
@@ -685,16 +849,16 @@ function AuthScreen({ route, navigation }) {
                   </TouchableOpacity>
 
                   <Text style={styles.label}>Vehicle Photo</Text>
-                  <TouchableOpacity 
-                    onPress={() => pickImage('vehicle')} 
+                  <TouchableOpacity
+                    onPress={() => pickImage('vehicle')}
                     style={styles.photoUploadBox}
                   >
                     {vehiclePhoto ? (
-                      <Image source={{uri: vehiclePhoto}} style={styles.uploadedImage} />
+                      <Image source={{ uri: vehiclePhoto }} style={styles.uploadedImage} />
                     ) : (
                       <View style={styles.uploadPlaceholder}>
                         <MaterialIcons name="add-a-photo" size={30} color={COLORS.gray} />
-                        <Text style={{color: COLORS.gray, marginTop: 10}}>
+                        <Text style={{ color: COLORS.gray, marginTop: 10 }}>
                           Upload Vehicle Photo
                         </Text>
                       </View>
@@ -705,35 +869,35 @@ function AuthScreen({ route, navigation }) {
             </>
           )}
 
-          <TextInput 
-            style={styles.input} 
-            placeholder="Email Address" 
-            value={email} 
-            onChangeText={setEmail} 
-            autoCapitalize="none" 
-            keyboardType="email-address" 
+          <TextInput
+            style={styles.input}
+            placeholder="Email Address"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
           />
-          
-          <TextInput 
-            style={styles.input} 
-            placeholder="Password" 
-            value={password} 
-            onChangeText={setPassword} 
-            secureTextEntry 
+
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
           />
 
           {isSignUp && (
-            <TextInput 
-              style={styles.input} 
-              placeholder="Confirm Password" 
-              value={retypePassword} 
-              onChangeText={setRetypePassword} 
-              secureTextEntry 
+            <TextInput
+              style={styles.input}
+              placeholder="Confirm Password"
+              value={retypePassword}
+              onChangeText={setRetypePassword}
+              secureTextEntry
             />
           )}
 
-          <TouchableOpacity 
-            style={styles.primaryBtn} 
+          <TouchableOpacity
+            style={styles.primaryBtn}
             onPress={handleAuth}
             disabled={loading}
           >
@@ -746,12 +910,12 @@ function AuthScreen({ route, navigation }) {
             )}
           </TouchableOpacity>
 
-          <View style={{marginTop: 20, flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap'}}>
-            <Text style={{color: COLORS.gray, fontSize: 15}}>
+          <View style={{ marginTop: 20, flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Text style={{ color: COLORS.gray, fontSize: 15 }}>
               {isSignUp ? "Already have an account? " : "Don't have an account? "}
             </Text>
             <TouchableOpacity onPress={() => setIsSignUp(!isSignUp)}>
-              <Text style={{color: COLORS.primary, fontWeight: 'bold', fontSize: 15}}>
+              <Text style={{ color: COLORS.primary, fontWeight: 'bold', fontSize: 15 }}>
                 {isSignUp ? "Log In" : "Register"}
               </Text>
             </TouchableOpacity>
@@ -765,11 +929,11 @@ function AuthScreen({ route, navigation }) {
             <MaterialIcons name="check-circle" size={70} color={COLORS.green} />
             <Text style={styles.modalTitle}>Application Submitted</Text>
             <Text style={styles.modalText}>
-              Thank you, {name}! Your application is under review. 
+              Thank you, {name}! Your application is under review.
               You will receive an email notification once processed.
             </Text>
-            <TouchableOpacity 
-              style={styles.primaryBtn} 
+            <TouchableOpacity
+              style={styles.primaryBtn}
               onPress={() => {
                 setShowSuccessModal(false);
                 navigation.replace('Welcome');
@@ -806,10 +970,16 @@ function MainScreen({ navigation }) {
     return unsub;
   }, [user, userRole]);
 
-  if (checking) {
+  const [fontsLoaded] = useFonts({
+    'SFPro-Regular': require('./assets/SFPRODISPLAYREGULAR.OTF'),
+    'SFPro-Bold': require('./assets/SFPRODISPLAYBOLD.OTF'),
+    'SFPro-Medium': require('./assets/SFPRODISPLAYMEDIUM.OTF'),
+  });
+
+  if (!fontsLoaded || checking) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color={COLORS.primary}/>
+        <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
   }
@@ -834,14 +1004,14 @@ function PendingApprovalScreen() {
       <MaterialIcons name="schedule" size={100} color={COLORS.yellow} />
       <Text style={styles.pendingTitle}>Application Under Review</Text>
       <Text style={styles.pendingText}>
-        Your driver application is being reviewed by our team. 
+        Your driver application is being reviewed by our team.
         You will receive an email notification once approved.
       </Text>
-      <TouchableOpacity 
-        onPress={() => signOut(auth)} 
-        style={[styles.primaryBtn, {marginTop: 30, backgroundColor: COLORS.red, width: 200}]}
+      <TouchableOpacity
+        onPress={() => signOut(auth)}
+        style={[styles.primaryBtn, { marginTop: 30, backgroundColor: COLORS.red, width: 200 }]}
       >
-        <MaterialIcons name="logout" size={20} color="white" style={{marginRight: 8}} />
+        <MaterialIcons name="logout" size={20} color="white" style={{ marginRight: 8 }} />
         <Text style={styles.btnText}>Log Out</Text>
       </TouchableOpacity>
     </SafeAreaView>
@@ -853,16 +1023,16 @@ function RejectedScreen() {
   return (
     <SafeAreaView style={styles.center}>
       <MaterialIcons name="cancel" size={100} color={COLORS.red} />
-      <Text style={[styles.pendingTitle, {color: COLORS.red}]}>Application Rejected</Text>
+      <Text style={[styles.pendingTitle, { color: COLORS.red }]}>Application Rejected</Text>
       <Text style={styles.pendingText}>
-        Unfortunately, your application was not approved. 
+        Unfortunately, your application was not approved.
         Please contact support for more information.
       </Text>
-      <TouchableOpacity 
-        onPress={() => signOut(auth)} 
-        style={[styles.primaryBtn, {marginTop: 30, backgroundColor: COLORS.red, width: 200}]}
+      <TouchableOpacity
+        onPress={() => signOut(auth)}
+        style={[styles.primaryBtn, { marginTop: 30, backgroundColor: COLORS.red, width: 200 }]}
       >
-        <MaterialIcons name="logout" size={20} color="white" style={{marginRight: 8}} />
+        <MaterialIcons name="logout" size={20} color="white" style={{ marginRight: 8 }} />
         <Text style={styles.btnText}>Log Out</Text>
       </TouchableOpacity>
     </SafeAreaView>
@@ -892,9 +1062,9 @@ function DriverDashboard({ navigation }) {
         where("categoryId", "==", categoryId),
         where("status", "in", ["searching", "negotiating"])
       );
-      
+
       const requestsUnsub = onSnapshot(q, (snap) => {
-        const allRequests = snap.docs.map(d => ({id: d.id, ...d.data()}));
+        const allRequests = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         // Filter out requests where this driver already bid
         const filtered = allRequests.filter(req => {
           const offers = req.offers || [];
@@ -908,10 +1078,10 @@ function DriverDashboard({ navigation }) {
         where("driverId", "==", user.uid),
         where("status", "in", ["accepted", "in_progress"])
       );
-      
+
       const activeUnsub = onSnapshot(activeQ, (snap) => {
         if (!snap.empty) {
-          setActiveRide({id: snap.docs[0].id, ...snap.docs[0].data()});
+          setActiveRide({ id: snap.docs[0].id, ...snap.docs[0].data() });
         } else {
           setActiveRide(null);
         }
@@ -929,41 +1099,41 @@ function DriverDashboard({ navigation }) {
 
   // Around line 945, replace submitBid function:
 
-const submitBid = async () => {
-  const price = parseInt(bidPrice);
-  
-  if (!bidPrice || isNaN(price) || price < 1) {
-    Alert.alert("Error", "Please enter a valid price");
-    return;
-  }
+  const submitBid = async () => {
+    const price = parseInt(bidPrice);
 
-  try {
-    console.log("Submitting bid for booking:", bidModal.id);
-    
-    const bidData = {
-      driverId: user.uid,
-      driverName: driverData.name || 'Unknown Driver',
-      driverPhoto: driverData.driverPhoto || null,
-      vehiclePhoto: driverData.vehiclePhoto || null,
-      licensePlate: driverData.licensePlate || 'N/A',
-      rating: driverData.rating || 5.0,
-      price: price,
-      timestamp: new Date().toISOString() // Use ISO string instead of serverTimestamp
-    };
+    if (!bidPrice || isNaN(price) || price < 1) {
+      Alert.alert("Error", "Please enter a valid price");
+      return;
+    }
 
-    await updateDoc(doc(db, "bookings", bidModal.id), {
-      status: "negotiating",
-      offers: arrayUnion(bidData)
-    });
+    try {
+      console.log("Submitting bid for booking:", bidModal.id);
 
-    Alert.alert("Success", "Your bid has been submitted");
-    setBidModal(null);
-    setBidPrice('');
-  } catch (error) {
-    console.error("Bid submission error:", error);
-    Alert.alert("Error", `Failed to submit bid: ${error.message}`);
-  }
-};
+      const bidData = {
+        driverId: user.uid,
+        driverName: driverData.name || 'Unknown Driver',
+        driverPhoto: driverData.driverPhoto || null,
+        vehiclePhoto: driverData.vehiclePhoto || null,
+        licensePlate: driverData.licensePlate || 'N/A',
+        rating: driverData.rating || 5.0,
+        price: price,
+        timestamp: new Date().toISOString() // Use ISO string instead of serverTimestamp
+      };
+
+      await updateDoc(doc(db, "bookings", bidModal.id), {
+        status: "negotiating",
+        offers: arrayUnion(bidData)
+      });
+
+      Alert.alert("Success", "Your bid has been submitted");
+      setBidModal(null);
+      setBidPrice('');
+    } catch (error) {
+      console.error("Bid submission error:", error);
+      Alert.alert("Error", `Failed to submit bid: ${error.message}`);
+    }
+  };
   if (activeRide) {
     return <ActiveRideScreen ride={activeRide} isDriver={true} navigation={navigation} />;
   }
@@ -971,25 +1141,25 @@ const submitBid = async () => {
   return (
     <SafeAreaView style={styles.whiteContainer}>
       <View style={styles.dashboardHeader}>
-        <View style={{flexDirection: 'row', alignItems: 'center'}}>
-          <Image 
-            source={require('./assets/aam.png')} 
-            style={{width: 35, height: 35, marginRight: 15}} 
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Image
+            source={require('./assets/aam.png')}
+            style={{ width: 35, height: 35, marginRight: 15 }}
             resizeMode="contain"
           />
           <View>
             <Text style={styles.headerTitle}>Available Rides</Text>
-            <Text style={{color: COLORS.gray, fontSize: 12}}>
+            <Text style={{ color: COLORS.gray, fontSize: 12 }}>
               {driverData?.category?.name || 'Loading...'}
             </Text>
           </View>
         </View>
-        
+
         <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
           {driverData?.driverPhoto ? (
-            <Image 
-              source={{uri: driverData.driverPhoto}} 
-              style={{width: 40, height: 40, borderRadius: 20}} 
+            <Image
+              source={{ uri: driverData.driverPhoto }}
+              style={{ width: 40, height: 40, borderRadius: 20 }}
             />
           ) : (
             <MaterialIcons name="account-circle" size={40} color={COLORS.gray} />
@@ -1018,25 +1188,25 @@ const submitBid = async () => {
       <FlatList
         data={requests}
         keyExtractor={item => item.id}
-        contentContainerStyle={{padding: 15}}
+        contentContainerStyle={{ padding: 15 }}
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <MaterialCommunityIcons name="inbox" size={60} color={COLORS.gray} />
             <Text style={styles.emptyText}>No ride requests at the moment</Text>
-            <Text style={{color: COLORS.gray, textAlign: 'center', marginTop: 5}}>
+            <Text style={{ color: COLORS.gray, textAlign: 'center', marginTop: 5 }}>
               New requests will appear here
             </Text>
           </View>
         }
-        renderItem={({item}) => (
+        renderItem={({ item }) => (
           <View style={styles.requestCard}>
             <View style={styles.cardHeader}>
-              <View style={{flex: 1}}>
-                <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 5}}>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
                   <MaterialCommunityIcons name="car" size={16} color={COLORS.primary} />
-                  <Text style={[styles.cardTitle, {marginLeft: 5}]}>New Ride Request</Text>
+                  <Text style={[styles.cardTitle, { marginLeft: 5 }]}>New Ride Request</Text>
                 </View>
-                <Text style={{color: COLORS.gray, fontSize: 12}}>
+                <Text style={{ color: COLORS.gray, fontSize: 12 }}>
                   {item.createdAt && new Date(item.createdAt.toDate()).toLocaleTimeString()}
                 </Text>
               </View>
@@ -1047,35 +1217,35 @@ const submitBid = async () => {
 
             <View style={styles.routeContainer}>
               <View style={styles.routeRow}>
-                <View style={[styles.routeDot, {backgroundColor: COLORS.green}]} />
+                <View style={[styles.routeDot, { backgroundColor: COLORS.green }]} />
                 <Text style={styles.routeText} numberOfLines={1}>{item.pickupAddress}</Text>
               </View>
               <View style={styles.routeLine} />
               <View style={styles.routeRow}>
-                <View style={[styles.routeDot, {backgroundColor: COLORS.red}]} />
+                <View style={[styles.routeDot, { backgroundColor: COLORS.red }]} />
                 <Text style={styles.routeText} numberOfLines={1}>{item.dropoffAddress}</Text>
               </View>
             </View>
 
-            <View style={{flexDirection: 'row', justifyContent: 'space-between', marginTop: 15}}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 15 }}>
               <View style={styles.infoChip}>
                 <MaterialIcons name="navigation" size={14} color={COLORS.primary} />
-                <Text style={{marginLeft: 5, fontSize: 12}}>{item.distance} km</Text>
+                <Text style={{ marginLeft: 5, fontSize: 12 }}>{item.distance} km</Text>
               </View>
               <View style={styles.infoChip}>
                 <MaterialIcons name="person" size={14} color={COLORS.primary} />
-                <Text style={{marginLeft: 5, fontSize: 12}}>{item.riderName}</Text>
+                <Text style={{ marginLeft: 5, fontSize: 12 }}>{item.riderName}</Text>
               </View>
             </View>
 
-            <TouchableOpacity 
-              style={styles.bidButton} 
+            <TouchableOpacity
+              style={styles.bidButton}
               onPress={() => {
                 setBidModal(item);
                 setBidPrice(item.estimatedFare.toString());
               }}
             >
-              <MaterialCommunityIcons name="cash-multiple" size={20} color="white" style={{marginRight: 8}} />
+              <MaterialCommunityIcons name="cash-multiple" size={20} color="white" style={{ marginRight: 8 }} />
               <Text style={styles.btnText}>Make Offer</Text>
             </TouchableOpacity>
           </View>
@@ -1083,46 +1253,46 @@ const submitBid = async () => {
       />
 
       <Modal visible={!!bidModal} transparent animationType="slide">
-  <TouchableWithoutFeedback onPress={() => setBidModal(null)}>
-    <View style={styles.modalOverlay}>
-      <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
-        <View style={styles.bidModalContent}>
-          <Text style={styles.modalTitle}>Make Your Offer</Text>
-          
-          <View style={styles.fareInfo}>
-            <Text style={{color: COLORS.gray}}>Estimated Fare</Text>
-            <Text style={styles.estimatedFare}>PKR {bidModal?.estimatedFare || 0}</Text>
-          </View>
+        <TouchableWithoutFeedback onPress={() => setBidModal(null)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+              <View style={styles.bidModalContent}>
+                <Text style={styles.modalTitle}>Make Your Offer</Text>
 
-          <Text style={styles.label}>Your Offer (PKR)</Text>
-          <TextInput
-            style={styles.bidInput}
-            value={bidPrice}
-            onChangeText={setBidPrice}
-            keyboardType="numeric"
-            placeholder="Enter amount"
-          />
+                <View style={styles.fareInfo}>
+                  <Text style={{ color: COLORS.gray }}>Estimated Fare</Text>
+                  <Text style={styles.estimatedFare}>PKR {bidModal?.estimatedFare || 0}</Text>
+                </View>
 
-          <View style={{flexDirection: 'row', gap: 10}}>
-            <TouchableOpacity 
-              style={[styles.modalButton, {backgroundColor: COLORS.lightGray, flex: 1}]} 
-              onPress={() => setBidModal(null)}
-            >
-              <Text style={{color: COLORS.black, fontWeight: 'bold'}}>Cancel</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[styles.modalButton, {flex: 1, backgroundColor: COLORS.primary}]} 
-              onPress={submitBid}
-            >
-              <Text style={styles.btnText}>Submit Bid</Text>
-            </TouchableOpacity>
+                <Text style={styles.label}>Your Offer (PKR)</Text>
+                <TextInput
+                  style={styles.bidInput}
+                  value={bidPrice}
+                  onChangeText={setBidPrice}
+                  keyboardType="numeric"
+                  placeholder="Enter amount"
+                />
+
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  <TouchableOpacity
+                    style={[styles.modalButton, { backgroundColor: COLORS.lightGray, flex: 1 }]}
+                    onPress={() => setBidModal(null)}
+                  >
+                    <Text style={{ color: COLORS.black, fontWeight: 'bold' }}>Cancel</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.modalButton, { flex: 1, backgroundColor: COLORS.primary }]}
+                    onPress={submitBid}
+                  >
+                    <Text style={styles.btnText}>Submit Bid</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
           </View>
-        </View>
-      </TouchableWithoutFeedback>
-    </View>
-  </TouchableWithoutFeedback>
-</Modal>
+        </TouchableWithoutFeedback>
+      </Modal>
 
     </SafeAreaView>
   );
@@ -1131,19 +1301,20 @@ const submitBid = async () => {
 // 5. RIDER DASHBOARD
 function RiderDashboard({ navigation }) {
   const { user } = useContext(AuthContext);
+  const insets = useSafeAreaInsets();
   const [step, setStep] = useState(1);
-  
+
   const [currentLocation, setCurrentLocation] = useState(null);
   const [pickupAddress, setPickupAddress] = useState('Current Location');
   const [pickupCoords, setPickupCoords] = useState(null);
   const [dropoffAddress, setDropoffAddress] = useState('');
   const [dropoffCoords, setDropoffCoords] = useState(null);
-  
+
   const [suggestions, setSuggestions] = useState([]);
   const [activeField, setActiveField] = useState(null);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const [searching, setSearching] = useState(false);
-  
+
   const [distance, setDistance] = useState(0);
   const [routeCoordinates, setRouteCoordinates] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -1151,90 +1322,90 @@ function RiderDashboard({ navigation }) {
   const [activeBooking, setActiveBooking] = useState(null);
   const [offers, setOffers] = useState([]);
   const [riderData, setRiderData] = useState(null);
-  
+
   const mapRef = useRef(null);
 
 
-// Replace the useEffect in RiderDashboard (around line 1250):
-useEffect(() => {
-  (async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert("Permission Denied", "Location access is required");
-      return;
-    }
+  // Replace the useEffect in RiderDashboard (around line 1250):
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert("Permission Denied", "Location access is required");
+        return;
+      }
 
-    const location = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.High
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High
+      });
+
+      const coords = {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01
+      };
+
+      setCurrentLocation(coords);
+      setPickupCoords(coords);
+      mapRef.current?.animateToRegion(coords, 1000);
+
+      const address = await reverseGeocode(coords.latitude, coords.longitude);
+      if (address) setPickupAddress(address);
+    })();
+
+    const riderUnsub = onSnapshot(doc(db, "riders", user.uid), (snap) => {
+      if (snap.exists()) {
+        setRiderData(snap.data());
+      }
+    });
+    const bookingsQ = query(
+      collection(db, "bookings"),
+      where("riderId", "==", user.uid),
+      where("status", "in", ["searching", "negotiating", "accepted", "in_progress", "completed"])
+    );
+
+    const bookingsUnsub = onSnapshot(bookingsQ, (snap) => {
+      if (!snap.empty) {
+        const booking = { id: snap.docs[0].id, ...snap.docs[0].data() };
+        setActiveBooking(booking);
+
+        if (booking.status === 'negotiating') {
+          setOffers(booking.offers || []);
+          setStep(3);
+        } else if (['accepted', 'in_progress', 'completed'].includes(booking.status)) {
+          setStep(4);
+        }
+      } else {
+        // THIS runs when we change status to 'history'
+        setActiveBooking(null);
+        setOffers([]);
+        // Force reset to step 1
+        setStep(1);
+        // Reset other states
+        setSelectedCategory(null);
+        setDropoffAddress('');
+        setDropoffCoords(null);
+        setDistance(0);
+        setRouteCoordinates([]);
+      }
     });
 
-    const coords = {
-      latitude: location.coords.latitude,
-      longitude: location.coords.longitude,
-      latitudeDelta: 0.01,
-      longitudeDelta: 0.01
-    };
-
-    setCurrentLocation(coords);
-    setPickupCoords(coords);
-    mapRef.current?.animateToRegion(coords, 1000);
-
-    const address = await reverseGeocode(coords.latitude, coords.longitude);
-    if (address) setPickupAddress(address);
-  })();
-
-  const riderUnsub = onSnapshot(doc(db, "riders", user.uid), (snap) => {
-    if (snap.exists()) {
-      setRiderData(snap.data());
-    }
-  });
-const bookingsQ = query(
-    collection(db, "bookings"),
-    where("riderId", "==", user.uid),
-    where("status", "in", ["searching", "negotiating", "accepted", "in_progress", "completed"])
-  );
-  
-  const bookingsUnsub = onSnapshot(bookingsQ, (snap) => {
-    if (!snap.empty) {
-      const booking = {id: snap.docs[0].id, ...snap.docs[0].data()};
-      setActiveBooking(booking);
-
-      if (booking.status === 'negotiating') {
-        setOffers(booking.offers || []);
-        setStep(3);
-      } else if (['accepted', 'in_progress', 'completed'].includes(booking.status)) {
-        setStep(4);
+    const showListener = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+    const hideListener = Keyboard.addListener('keyboardDidHide', () => {
+      setKeyboardVisible(false);
+      if (suggestions.length === 0) {
+        setActiveField(null);
       }
-    } else {
-      // THIS runs when we change status to 'history'
-      setActiveBooking(null);
-      setOffers([]);
-      // Force reset to step 1
-      setStep(1); 
-      // Reset other states
-      setSelectedCategory(null);
-      setDropoffAddress('');
-      setDropoffCoords(null);
-      setDistance(0);
-      setRouteCoordinates([]);
-    }
-  });
+    });
 
-  const showListener = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
-  const hideListener = Keyboard.addListener('keyboardDidHide', () => {
-    setKeyboardVisible(false);
-    if (suggestions.length === 0) {
-      setActiveField(null);
-    }
-  });
-
-  return () => {
-    riderUnsub();
-    bookingsUnsub();
-    showListener.remove();
-    hideListener.remove();
-  };
-}, [user]);
+    return () => {
+      riderUnsub();
+      bookingsUnsub();
+      showListener.remove();
+      hideListener.remove();
+    };
+  }, [user]);
   const reverseGeocode = async (lat, lon) => {
     try {
       const response = await fetch(
@@ -1266,9 +1437,9 @@ const bookingsQ = query(
       const response = await fetch(
         `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(text)}&filter=countrycode:pk&bias=proximity:67.0011,24.8607&limit=5&apiKey=${GEOAPIFY_KEY}`
       );
-      
+
       const data = await response.json();
-      
+
       if (data.features && data.features.length > 0) {
         const results = data.features.map(item => ({
           id: item.properties.place_id || Math.random().toString(),
@@ -1313,7 +1484,7 @@ const bookingsQ = query(
     if ((activeField === 'pickup' && dropoffCoords) || (activeField === 'dropoff' && pickupCoords)) {
       const pickup = activeField === 'pickup' ? coords : pickupCoords;
       const dropoff = activeField === 'dropoff' ? coords : dropoffCoords;
-      
+
       // Calculate road distance
       const result = await calculateRoadDistance(pickup, dropoff);
       setDistance(result.distance);
@@ -1331,7 +1502,7 @@ const bookingsQ = query(
   const useCurrentLocation = async () => {
     if (currentLocation) {
       const address = await reverseGeocode(currentLocation.latitude, currentLocation.longitude);
-      
+
       if (activeField === 'pickup') {
         setPickupAddress(address || 'Current Location');
         setPickupCoords(currentLocation);
@@ -1365,7 +1536,7 @@ const bookingsQ = query(
 
     try {
       const fare = calculateFare(distance, selectedCategory.id);
-      
+
       await addDoc(collection(db, "bookings"), {
         riderId: user.uid,
         riderName: riderData?.name || 'Rider',
@@ -1462,10 +1633,12 @@ const bookingsQ = query(
   };
 
   return (
-    <View style={{flex: 1}}>
+    <View style={{ flex: 1 }}>
       <MapView
         ref={mapRef}
         style={styles.map}
+        provider={PROVIDER_GOOGLE}
+        customMapStyle={DARK_MAP_STYLE}
         initialRegion={{
           latitude: 24.8607,
           longitude: 67.0011,
@@ -1475,24 +1648,16 @@ const bookingsQ = query(
         showsUserLocation={true}
         showsMyLocationButton={false}
       >
-        <UrlTile
-          urlTemplate={`https://api.maptiler.com/maps/streets-v2/256/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`}
-          maximumZ={19}
-        />
 
         {pickupCoords && (
           <Marker coordinate={pickupCoords} title="Pickup">
-            <View style={styles.markerContainer}>
-              <View style={[styles.markerDot, {backgroundColor: COLORS.green}]} />
-            </View>
+            <Image source={require('./assets/kairi_bike_3d.png')} style={{ width: 45, height: 45 }} resizeMode="contain" />
           </Marker>
         )}
 
         {dropoffCoords && (
           <Marker coordinate={dropoffCoords} title="Dropoff">
-            <View style={styles.markerContainer}>
-              <View style={[styles.markerDot, {backgroundColor: COLORS.red}]} />
-            </View>
+            <Image source={require('./assets/langra_go_3d.png')} style={{ width: 45, height: 45 }} resizeMode="contain" />
           </Marker>
         )}
 
@@ -1505,23 +1670,26 @@ const bookingsQ = query(
         )}
       </MapView>
 
-      <TouchableOpacity 
-        style={styles.profileButton} 
+      <TouchableOpacity
+        style={styles.profileButton}
         onPress={() => navigation.navigate('Profile')}
       >
         <MaterialIcons name="account-circle" size={28} color={COLORS.black} />
       </TouchableOpacity>
 
-      <View style={[styles.bottomSheet, { height: getBottomSheetHeight() }]}>
+      <BlurView intensity={80} tint="light" style={[styles.bottomSheet, {
+        height: getBottomSheetHeight(),
+        bottom: insets.bottom + 10,
+      }]}>
         {step === 1 && (
-          <View style={{flex: 1}}>
-            <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 20}}>
+          <View style={{ flex: 1 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
               <MaterialIcons name="location-on" size={24} color={COLORS.primary} />
-              <Text style={[styles.sheetTitle, {marginBottom: 0, marginLeft: 10}]}>Where to?</Text>
+              <Text style={[styles.sheetTitle, { marginBottom: 0, marginLeft: 10 }]}>Where to?</Text>
             </View>
 
             <View style={styles.locationInputContainer}>
-              <View style={[styles.locationDot, {backgroundColor: COLORS.green}]} />
+              <View style={[styles.locationDot, { backgroundColor: COLORS.green }]} />
               <TextInput
                 style={styles.locationInput}
                 value={pickupAddress}
@@ -1541,7 +1709,7 @@ const bookingsQ = query(
             </View>
 
             <View style={styles.locationInputContainer}>
-              <View style={[styles.locationDot, {backgroundColor: COLORS.red}]} />
+              <View style={[styles.locationDot, { backgroundColor: COLORS.red }]} />
               <TextInput
                 style={styles.locationInput}
                 value={dropoffAddress}
@@ -1563,9 +1731,9 @@ const bookingsQ = query(
             </View>
 
             {isKeyboardVisible && (
-              <View style={{flex: 1, marginTop: 10}}>
+              <View style={{ flex: 1, marginTop: 10 }}>
                 {searching && (
-                  <View style={{padding: 20, alignItems: 'center'}}>
+                  <View style={{ padding: 20, alignItems: 'center' }}>
                     <ActivityIndicator size="small" color={COLORS.primary} />
                   </View>
                 )}
@@ -1575,7 +1743,7 @@ const bookingsQ = query(
                     data={suggestions}
                     keyExtractor={item => item.id}
                     keyboardShouldPersistTaps="handled"
-                    renderItem={({item}) => (
+                    renderItem={({ item }) => (
                       <TouchableOpacity
                         style={styles.suggestionItem}
                         onPress={() => selectLocation(item)}
@@ -1595,7 +1763,7 @@ const bookingsQ = query(
                     onPress={useCurrentLocation}
                   >
                     <MaterialIcons name="my-location" size={20} color={COLORS.primary} />
-                    <Text style={{marginLeft: 10, color: COLORS.primary, fontWeight: 'bold'}}>
+                    <Text style={{ marginLeft: 10, color: COLORS.primary, fontWeight: 'bold' }}>
                       Use Current Location
                     </Text>
                   </TouchableOpacity>
@@ -1615,7 +1783,7 @@ const bookingsQ = query(
         )}
 
         {step === 2 && (
-          <View style={{flex: 1}}>
+          <View style={{ flex: 1 }}>
             <View style={styles.sheetHeader}>
               <TouchableOpacity onPress={() => {
                 setStep(1);
@@ -1623,7 +1791,7 @@ const bookingsQ = query(
               }}>
                 <Ionicons name="arrow-back" size={24} color={COLORS.black} />
               </TouchableOpacity>
-              <Text style={[styles.sheetTitle, {marginLeft: 15}]}>Select Ride ({distance} km)</Text>
+              <Text style={[styles.sheetTitle, { marginLeft: 15 }]}>Select Ride ({distance} km)</Text>
             </View>
 
             {distance > 40 ? (
@@ -1631,16 +1799,16 @@ const bookingsQ = query(
                 <MaterialIcons name="error-outline" size={50} color={COLORS.red} />
                 <Text style={styles.errorTitle}>Distance Too Long</Text>
                 <Text style={styles.errorText}>
-                  We currently don't support rides longer than 40 km. 
+                  We currently don't support rides longer than 40 km.
                   Please select a closer destination.
                 </Text>
               </View>
             ) : (
               <>
-                <ScrollView 
-                  horizontal 
+                <ScrollView
+                  horizontal
                   showsHorizontalScrollIndicator={false}
-                  style={{marginVertical: 20}}
+                  style={{ marginVertical: 20 }}
                 >
                   {Object.values(CATEGORIES).map(category => {
                     const fare = calculateFare(distance, category.id);
@@ -1660,7 +1828,7 @@ const bookingsQ = query(
                           size={35}
                           color={isSelected ? COLORS.primary : COLORS.black}
                         />
-                        <Text style={[styles.categoryName, isSelected && {color: COLORS.primary}]}>
+                        <Text style={[styles.categoryName, isSelected && { color: COLORS.primary }]}>
                           {category.name}
                         </Text>
                         <Text style={styles.categoryPrice}>PKR {fare}</Text>
@@ -1672,16 +1840,16 @@ const bookingsQ = query(
                 <View style={styles.fareBreakdown}>
                   <Text style={styles.fareLabel}>Estimated Fare</Text>
                   <Text style={styles.fareAmount}>PKR {estimatedFare || 0}</Text>
-                  <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 10}}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10 }}>
                     <MaterialCommunityIcons name="cash" size={16} color={COLORS.gray} />
-                    <Text style={[styles.fareNote, {marginLeft: 5}]}>
+                    <Text style={[styles.fareNote, { marginLeft: 5 }]}>
                       Pay in cash after ride completion
                     </Text>
                   </View>
                 </View>
 
                 <TouchableOpacity
-                  style={[styles.requestButton, !selectedCategory && {opacity: 0.5}]}
+                  style={[styles.requestButton, !selectedCategory && { opacity: 0.5 }]}
                   onPress={requestRide}
                   disabled={!selectedCategory}
                 >
@@ -1693,31 +1861,31 @@ const bookingsQ = query(
         )}
 
         {step === 3 && (
-          <View style={{flex: 1}}>
+          <View style={{ flex: 1 }}>
             <View style={styles.sheetHeader}>
               <TouchableOpacity onPress={() => {
                 cancelBooking();
               }}>
                 <MaterialIcons name="close" size={24} color={COLORS.red} />
               </TouchableOpacity>
-              <Text style={[styles.sheetTitle, {marginLeft: 15, flex: 1}]} numberOfLines={1}>Finding Drivers</Text>
+              <Text style={[styles.sheetTitle, { marginLeft: 15, flex: 1 }]} numberOfLines={1}>Finding Drivers</Text>
             </View>
 
             {offers.length === 0 ? (
-              <View style={{alignItems: 'center', marginTop: 30, paddingHorizontal: 20}}>
+              <View style={{ alignItems: 'center', marginTop: 30, paddingHorizontal: 20 }}>
                 <ActivityIndicator size="large" color={COLORS.primary} />
-                <Text style={{marginTop: 20, color: COLORS.gray, fontSize: 16, textAlign: 'center'}}>
+                <Text style={{ marginTop: 20, color: COLORS.gray, fontSize: 16, textAlign: 'center' }}>
                   Broadcasting to nearby captains...
                 </Text>
-                <Text style={{marginTop: 10, color: COLORS.gray, textAlign: 'center', paddingHorizontal: 10}}>
+                <Text style={{ marginTop: 10, color: COLORS.gray, textAlign: 'center', paddingHorizontal: 10 }}>
                   Estimated Fare: PKR {activeBooking?.estimatedFare}
                 </Text>
               </View>
             ) : (
               <>
-                <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 15, flexWrap: 'wrap'}}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 15, flexWrap: 'wrap' }}>
                   <MaterialCommunityIcons name="car-multiple" size={20} color={COLORS.primary} />
-                  <Text style={[styles.offersTitle, {marginLeft: 8, marginBottom: 0, flex: 1}]}>
+                  <Text style={[styles.offersTitle, { marginLeft: 8, marginBottom: 0, flex: 1 }]}>
                     {offers.length} {offers.length === 1 ? 'Offer' : 'Offers'} Received
                   </Text>
                 </View>
@@ -1726,47 +1894,47 @@ const bookingsQ = query(
                   data={offers}
                   keyExtractor={(item, index) => `offer-${item.driverId}-${index}`}
                   showsVerticalScrollIndicator={false}
-                  renderItem={({item}) => (
+                  renderItem={({ item }) => (
                     <View style={styles.offerCard}>
-                      <View style={{flexDirection: 'row', marginBottom: 15, alignItems: 'center'}}>
+                      <View style={{ flexDirection: 'row', marginBottom: 15, alignItems: 'center' }}>
                         {item.driverPhoto ? (
                           <Image
-                            source={{uri: item.driverPhoto}}
+                            source={{ uri: item.driverPhoto }}
                             style={styles.driverPhoto}
                           />
                         ) : (
-                          <View style={[styles.driverPhoto, {backgroundColor: COLORS.lightGray, justifyContent: 'center', alignItems: 'center'}]}>
+                          <View style={[styles.driverPhoto, { backgroundColor: COLORS.lightGray, justifyContent: 'center', alignItems: 'center' }]}>
                             <MaterialIcons name="person" size={24} color={COLORS.gray} />
                           </View>
                         )}
 
                         {item.vehiclePhoto && (
                           <Image
-                            source={{uri: item.vehiclePhoto}}
+                            source={{ uri: item.vehiclePhoto }}
                             style={styles.vehiclePhoto}
                           />
                         )}
                       </View>
 
-                      <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start'}}>
-                        <View style={{flex: 1, marginRight: 15}}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <View style={{ flex: 1, marginRight: 15 }}>
                           <Text style={styles.driverName} numberOfLines={2}>{item.driverName}</Text>
                           <Text style={styles.licensePlate} numberOfLines={1}>{item.licensePlate}</Text>
-                          <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 5}}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 5 }}>
                             <MaterialIcons name="star" size={14} color={COLORS.yellow} />
-                            <Text style={{marginLeft: 5, color: COLORS.gray, fontSize: 12}}>
+                            <Text style={{ marginLeft: 5, color: COLORS.gray, fontSize: 12 }}>
                               {item.rating?.toFixed(1) || '5.0'}
                             </Text>
                           </View>
                         </View>
 
-                        <View style={{alignItems: 'flex-end', minWidth: 90}}>
+                        <View style={{ alignItems: 'flex-end', minWidth: 90 }}>
                           <Text style={styles.offerPrice} numberOfLines={1}>PKR {item.price}</Text>
                           <TouchableOpacity
                             style={styles.acceptButton}
                             onPress={() => acceptOffer(item)}
                           >
-                            <Text style={{color: 'white', fontWeight: 'bold', fontSize: 13}}>Accept</Text>
+                            <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 13 }}>Accept</Text>
                           </TouchableOpacity>
                         </View>
                       </View>
@@ -1777,7 +1945,7 @@ const bookingsQ = query(
             )}
           </View>
         )}
-      </View>
+      </BlurView>
     </View>
   );
 }
@@ -1797,70 +1965,70 @@ function ActiveRideScreen({ ride, isDriver, navigation }) {
   const flatListRef = useRef(null);
 
   useEffect(() => {
-  console.log("ActiveRideScreen useEffect - isDriver:", isDriver, "rideStatus:", rideStatus);
-  
-  const rideUnsub = onSnapshot(doc(db, "bookings", ride.id), (snap) => {
-    if (snap.exists()) {
-      const data = snap.data();
-      console.log("Ride data updated:", data.status, "isDriver:", isDriver);
-      
-      setRideStatus(data.status);
-      setRideData({id: ride.id, ...data});
-      
-      if (data.driverLocation) {
-        setDriverLocation(data.driverLocation);
-      }
-      
-      // Show rating modal when ride is completed (for riders only)
-      if (data.status === 'completed' && !isDriver) {
-        console.log("Ride completed for rider. riderRating:", data.riderRating, "showRatingModal:", showRatingModal);
-        
-        // Force show modal if no rating exists
-        if (!data.riderRating) {
-          console.log("Setting rating modal to true");
-          setTimeout(() => {
-            setShowRatingModal(true);
-          }, 2000); // 2 second delay
+    console.log("ActiveRideScreen useEffect - isDriver:", isDriver, "rideStatus:", rideStatus);
+
+    const rideUnsub = onSnapshot(doc(db, "bookings", ride.id), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        console.log("Ride data updated:", data.status, "isDriver:", isDriver);
+
+        setRideStatus(data.status);
+        setRideData({ id: ride.id, ...data });
+
+        if (data.driverLocation) {
+          setDriverLocation(data.driverLocation);
+        }
+
+        // Show rating modal when ride is completed (for riders only)
+        if (data.status === 'completed' && !isDriver) {
+          console.log("Ride completed for rider. riderRating:", data.riderRating, "showRatingModal:", showRatingModal);
+
+          // Force show modal if no rating exists
+          if (!data.riderRating) {
+            console.log("Setting rating modal to true");
+            setTimeout(() => {
+              setShowRatingModal(true);
+            }, 2000); // 2 second delay
+          }
         }
       }
+    });
+
+    const messagesQ = query(
+      collection(db, `bookings/${ride.id}/messages`),
+      orderBy("timestamp", "asc")
+    );
+
+    const messagesUnsub = onSnapshot(messagesQ, (snap) => {
+      setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    });
+
+    let locationInterval;
+    if (isDriver && rideStatus !== 'completed') {
+      locationInterval = setInterval(async () => {
+        try {
+          const location = await Location.getCurrentPositionAsync({});
+          await updateDoc(doc(db, "bookings", ride.id), {
+            driverLocation: {
+              latitude: location.coords.latitude,
+              longitude: location.coords.longitude
+            }
+          });
+        } catch (error) {
+          console.log("Location update error:", error);
+        }
+      }, 5000);
     }
-  });
 
-  const messagesQ = query(
-    collection(db, `bookings/${ride.id}/messages`),
-    orderBy("timestamp", "asc")
-  );
-  
-  const messagesUnsub = onSnapshot(messagesQ, (snap) => {
-    setMessages(snap.docs.map(d => ({id: d.id, ...d.data()})));
-    setTimeout(() => {
-      flatListRef.current?.scrollToEnd({animated: true});
-    }, 100);
-  });
-
-  let locationInterval;
-  if (isDriver && rideStatus !== 'completed') {
-    locationInterval = setInterval(async () => {
-      try {
-        const location = await Location.getCurrentPositionAsync({});
-        await updateDoc(doc(db, "bookings", ride.id), {
-          driverLocation: {
-            latitude: location.coords.latitude,
-            longitude: location.coords.longitude
-          }
-        });
-      } catch (error) {
-        console.log("Location update error:", error);
-      }
-    }, 5000);
-  }
-
-  return () => {
-    rideUnsub();
-    messagesUnsub();
-    if (locationInterval) clearInterval(locationInterval);
-  };
-}, [ride.id, isDriver]);
+    return () => {
+      rideUnsub();
+      messagesUnsub();
+      if (locationInterval) clearInterval(locationInterval);
+    };
+  }, [ride.id, isDriver]);
 
   const handleBackPress = () => {
     // Always navigate back to Main - let MainScreen handle the routing
@@ -1951,9 +2119,9 @@ function ActiveRideScreen({ ride, isDriver, navigation }) {
         const driverData = driverDoc.data();
         const currentRating = driverData.rating || 5.0;
         const totalRides = driverData.totalRides || 0;
-        
+
         const newRating = ((currentRating * totalRides) + rating) / (totalRides + 1);
-        
+
         await updateDoc(doc(db, "drivers", ride.driverId), {
           rating: parseFloat(newRating.toFixed(1))
         });
@@ -1961,7 +2129,7 @@ function ActiveRideScreen({ ride, isDriver, navigation }) {
 
       setShowRatingModal(false);
       navigation.navigate('Main');
-      
+
     } catch (error) {
       console.error("Rating error:", error);
       Alert.alert("Error", "Failed to submit rating. Please try again.");
@@ -1972,19 +2140,19 @@ function ActiveRideScreen({ ride, isDriver, navigation }) {
     <SafeAreaView style={styles.whiteContainer}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{flex: 1}}
+        style={{ flex: 1 }}
       >
         <View style={styles.rideHeader}>
-          <TouchableOpacity onPress={handleBackPress} style={{marginRight: 15, padding: 5}}>
+          <TouchableOpacity onPress={handleBackPress} style={{ marginRight: 15, padding: 5 }}>
             <Ionicons name="arrow-back" size={24} color={COLORS.black} />
           </TouchableOpacity>
-          <View style={{flex: 1, marginRight: 10}}>
+          <View style={{ flex: 1, marginRight: 10 }}>
             <Text style={styles.rideStatus}>
               {rideStatus === 'accepted' && 'Driver Assigned'}
               {rideStatus === 'in_progress' && 'Ride In Progress'}
               {rideStatus === 'completed' && 'Ride Completed'}
             </Text>
-            <Text style={{color: COLORS.gray, fontSize: 12}}>
+            <Text style={{ color: COLORS.gray, fontSize: 12 }}>
               PKR {ride.finalPrice}
             </Text>
           </View>
@@ -1993,38 +2161,38 @@ function ActiveRideScreen({ ride, isDriver, navigation }) {
         {!isDriver && (
           <View style={styles.driverInfoCard}>
             {ride.driverPhoto ? (
-              <Image source={{uri: ride.driverPhoto}} style={styles.driverInfoPhoto} />
+              <Image source={{ uri: ride.driverPhoto }} style={styles.driverInfoPhoto} />
             ) : (
-              <View style={[styles.driverInfoPhoto, {backgroundColor: COLORS.lightGray, justifyContent: 'center', alignItems: 'center'}]}>
+              <View style={[styles.driverInfoPhoto, { backgroundColor: COLORS.lightGray, justifyContent: 'center', alignItems: 'center' }]}>
                 <MaterialIcons name="person" size={24} color={COLORS.gray} />
               </View>
             )}
-            
-            <View style={{flex: 1, marginRight: 10}}>
+
+            <View style={{ flex: 1, marginRight: 10 }}>
               <Text style={styles.driverInfoName}>
                 {ride.driverName}
               </Text>
               <Text style={styles.licensePlateText}>
                 {ride.licensePlate}
               </Text>
-              <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 3}}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 3 }}>
                 <MaterialIcons name="star" size={14} color={COLORS.yellow} />
-                <Text style={{marginLeft: 3, color: COLORS.gray, fontSize: 12}}>
+                <Text style={{ marginLeft: 3, color: COLORS.gray, fontSize: 12 }}>
                   {ride.rating?.toFixed(1) || '5.0'}
                 </Text>
               </View>
             </View>
 
             {ride.vehiclePhoto && (
-              <Image source={{uri: ride.vehiclePhoto}} style={styles.vehicleInfoPhoto} />
+              <Image source={{ uri: ride.vehiclePhoto }} style={styles.vehicleInfoPhoto} />
             )}
           </View>
         )}
 
-        <View style={{flex: 1, backgroundColor: COLORS.background}}>
+        <View style={{ flex: 1, backgroundColor: COLORS.background }}>
           <MapView
             ref={mapRef}
-            style={{flex: 1}}
+            style={{ flex: 1 }}
             initialRegion={{
               latitude: ride.pickupCoords.latitude,
               longitude: ride.pickupCoords.longitude,
@@ -2040,13 +2208,13 @@ function ActiveRideScreen({ ride, isDriver, navigation }) {
 
             <Marker coordinate={ride.pickupCoords} title="Pickup">
               <View style={styles.markerContainer}>
-                <View style={[styles.markerDot, {backgroundColor: COLORS.green}]} />
+                <View style={[styles.markerDot, { backgroundColor: COLORS.green }]} />
               </View>
             </Marker>
 
             <Marker coordinate={ride.dropoffCoords} title="Dropoff">
               <View style={styles.markerContainer}>
-                <View style={[styles.markerDot, {backgroundColor: COLORS.red}]} />
+                <View style={[styles.markerDot, { backgroundColor: COLORS.red }]} />
               </View>
             </Marker>
 
@@ -2060,7 +2228,7 @@ function ActiveRideScreen({ ride, isDriver, navigation }) {
           </MapView>
         </View>
 
-        <View style={{backgroundColor: COLORS.white}}>
+        <View style={{ backgroundColor: COLORS.white }}>
           <View style={styles.chatHeaderContainer}>
             <MaterialIcons name="chat" size={20} color={COLORS.primary} />
             <Text style={styles.chatHeaderText}>Messages</Text>
@@ -2070,21 +2238,21 @@ function ActiveRideScreen({ ride, isDriver, navigation }) {
             ref={flatListRef}
             data={messages}
             keyExtractor={item => item.id}
-            style={{maxHeight: 150, paddingHorizontal: 15}}
-            contentContainerStyle={{paddingVertical: 10}}
+            style={{ maxHeight: 150, paddingHorizontal: 15 }}
+            contentContainerStyle={{ paddingVertical: 10 }}
             ListEmptyComponent={
-              <Text style={{textAlign: 'center', color: COLORS.gray, fontSize: 13, paddingVertical: 20}}>
+              <Text style={{ textAlign: 'center', color: COLORS.gray, fontSize: 13, paddingVertical: 20 }}>
                 No messages yet
               </Text>
             }
-            renderItem={({item}) => (
+            renderItem={({ item }) => (
               <View style={[
                 styles.messageBubble,
                 item.senderId === user.uid ? styles.myMessage : styles.theirMessage
               ]}>
                 <Text style={[
                   styles.messageText,
-                  item.senderId === user.uid && {color: COLORS.white}
+                  item.senderId === user.uid && { color: COLORS.white }
                 ]}>
                   {item.text}
                 </Text>
@@ -2102,41 +2270,41 @@ function ActiveRideScreen({ ride, isDriver, navigation }) {
               multiline
               maxLength={500}
             />
-            <TouchableOpacity onPress={sendMessage} style={{padding: 5}}>
+            <TouchableOpacity onPress={sendMessage} style={{ padding: 5 }}>
               <MaterialIcons name="send" size={24} color={COLORS.primary} />
             </TouchableOpacity>
           </View>
 
           {isDriver && (
-            <View style={{padding: 15, paddingHorizontal: 20}}>
+            <View style={{ padding: 15, paddingHorizontal: 20 }}>
               {rideStatus === 'accepted' && (
                 <TouchableOpacity style={styles.actionButton} onPress={startRide}>
-                  <MaterialIcons name="play-arrow" size={20} color="white" style={{marginRight: 8}} />
+                  <MaterialIcons name="play-arrow" size={20} color="white" style={{ marginRight: 8 }} />
                   <Text style={styles.btnText}>Start Ride</Text>
                 </TouchableOpacity>
               )}
-              
+
               {rideStatus === 'in_progress' && (
-                <TouchableOpacity 
-                  style={[styles.actionButton, {backgroundColor: COLORS.green}]} 
+                <TouchableOpacity
+                  style={[styles.actionButton, { backgroundColor: COLORS.green }]}
                   onPress={completeRide}
                 >
-                  <MaterialIcons name="check-circle" size={20} color="white" style={{marginRight: 8}} />
+                  <MaterialIcons name="check-circle" size={20} color="white" style={{ marginRight: 8 }} />
                   <Text style={styles.btnText}>Complete Ride</Text>
                 </TouchableOpacity>
               )}
 
               {rideStatus === 'completed' && (
-                <View style={{alignItems: 'center', paddingVertical: 20}}>
+                <View style={{ alignItems: 'center', paddingVertical: 20 }}>
                   <MaterialIcons name="check-circle" size={50} color={COLORS.green} />
-                  <Text style={{fontSize: 18, fontWeight: 'bold', color: COLORS.green, marginTop: 10, textAlign: 'center'}}>
+                  <Text style={{ fontSize: 18, fontWeight: 'bold', color: COLORS.green, marginTop: 10, textAlign: 'center' }}>
                     Ride Completed
                   </Text>
-                  <Text style={{color: COLORS.gray, marginTop: 5, textAlign: 'center'}}>
+                  <Text style={{ color: COLORS.gray, marginTop: 5, textAlign: 'center' }}>
                     Earnings: PKR {ride.finalPrice}
                   </Text>
-                  <TouchableOpacity 
-                    style={[styles.primaryBtn, {marginTop: 15, width: '100%', maxWidth: 300}]} 
+                  <TouchableOpacity
+                    style={[styles.primaryBtn, { marginTop: 15, width: '100%', maxWidth: 300 }]}
                     onPress={() => navigation.navigate('Main')}
                   >
                     <Text style={styles.btnText}>Back to Dashboard</Text>
@@ -2147,139 +2315,139 @@ function ActiveRideScreen({ ride, isDriver, navigation }) {
           )}
 
           {!isDriver && rideStatus === 'completed' && (
-  <View style={{position: 'absolute', top: 100, right: 20, zIndex: 1000}}>
-    <TouchableOpacity 
-      style={{backgroundColor: 'red', padding: 10, borderRadius: 5}}
-      onPress={() => {
-        console.log("DEBUG: Force showing rating modal");
-        setShowRatingModal(true);
-      }}
-    >
-      <Text style={{color: 'white', fontSize: 12}}>DEBUG RATING</Text>
-    </TouchableOpacity>
-  </View>
-)}
+            <View style={{ position: 'absolute', top: 100, right: 20, zIndex: 1000 }}>
+              <TouchableOpacity
+                style={{ backgroundColor: 'red', padding: 10, borderRadius: 5 }}
+                onPress={() => {
+                  console.log("DEBUG: Force showing rating modal");
+                  setShowRatingModal(true);
+                }}
+              >
+                <Text style={{ color: 'white', fontSize: 12 }}>DEBUG RATING</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           {!isDriver && rideStatus === 'completed' && !rideData.riderRating && (
-  <View style={{padding: 15, paddingHorizontal: 20, alignItems: 'center'}}>
-    <MaterialIcons name="star" size={50} color={COLORS.yellow} />
-    <Text style={{fontSize: 16, fontWeight: 'bold', marginTop: 10, textAlign: 'center'}}>
-      Ride Completed
-    </Text>
-    <Text style={{color: COLORS.gray, fontSize: 14, marginTop: 5, textAlign: 'center', paddingHorizontal: 10}}>
-      Please rate your experience
-    </Text>
-    <TouchableOpacity 
-      style={[styles.primaryBtn, {marginTop: 15, width: '100%', maxWidth: 300}]} 
-      onPress={() => {
-        console.log("Manual rating button pressed");
-        setShowRatingModal(true);
-      }}
-    >
-      <Text style={styles.btnText}>Rate Your Ride</Text>
-    </TouchableOpacity>
-  </View>
-)}
+            <View style={{ padding: 15, paddingHorizontal: 20, alignItems: 'center' }}>
+              <MaterialIcons name="star" size={50} color={COLORS.yellow} />
+              <Text style={{ fontSize: 16, fontWeight: 'bold', marginTop: 10, textAlign: 'center' }}>
+                Ride Completed
+              </Text>
+              <Text style={{ color: COLORS.gray, fontSize: 14, marginTop: 5, textAlign: 'center', paddingHorizontal: 10 }}>
+                Please rate your experience
+              </Text>
+              <TouchableOpacity
+                style={[styles.primaryBtn, { marginTop: 15, width: '100%', maxWidth: 300 }]}
+                onPress={() => {
+                  console.log("Manual rating button pressed");
+                  setShowRatingModal(true);
+                }}
+              >
+                <Text style={styles.btnText}>Rate Your Ride</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
-{!isDriver && rideStatus === 'completed' && rideData.riderRating && (
-  <View style={{padding: 15, paddingHorizontal: 20, alignItems: 'center'}}>
-    <MaterialIcons name="check-circle" size={50} color={COLORS.green} />
-    <Text style={{fontSize: 18, fontWeight: 'bold', color: COLORS.green, marginTop: 10, textAlign: 'center'}}>
-      Thank You!
-    </Text>
-    <Text style={{color: COLORS.gray, marginTop: 5, textAlign: 'center', paddingHorizontal: 15}}>
-      Your rating has been submitted
-    </Text>
-    <TouchableOpacity 
-      style={[styles.primaryBtn, {marginTop: 15, width: '100%', maxWidth: 300}]} 
-      onPress={() => navigation.navigate('Main')}
-    >
-      <Text style={styles.btnText}>Back to Home</Text>
-    </TouchableOpacity>
-  </View>
-)}
+          {!isDriver && rideStatus === 'completed' && rideData.riderRating && (
+            <View style={{ padding: 15, paddingHorizontal: 20, alignItems: 'center' }}>
+              <MaterialIcons name="check-circle" size={50} color={COLORS.green} />
+              <Text style={{ fontSize: 18, fontWeight: 'bold', color: COLORS.green, marginTop: 10, textAlign: 'center' }}>
+                Thank You!
+              </Text>
+              <Text style={{ color: COLORS.gray, marginTop: 5, textAlign: 'center', paddingHorizontal: 15 }}>
+                Your rating has been submitted
+              </Text>
+              <TouchableOpacity
+                style={[styles.primaryBtn, { marginTop: 15, width: '100%', maxWidth: 300 }]}
+                onPress={() => navigation.navigate('Main')}
+              >
+                <Text style={styles.btnText}>Back to Home</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
-        <Modal 
-  visible={showRatingModal} 
-  transparent 
-  animationType="slide"
-  onRequestClose={() => {
-    console.log("Modal back pressed");
-    setShowRatingModal(false);
-    navigation.navigate('Main');
-  }}
->
-  <View style={styles.modalOverlay}>
-    <View style={styles.ratingModalContent}>
-      <MaterialIcons name="star" size={70} color={COLORS.yellow} />
-      
-      <Text style={styles.modalTitle}>Rate Your Ride</Text>
-      <Text style={styles.ratingSubtitle}>
-        How was your experience with {ride.driverName}?
-      </Text>
+        <Modal
+          visible={showRatingModal}
+          transparent
+          animationType="slide"
+          onRequestClose={() => {
+            console.log("Modal back pressed");
+            setShowRatingModal(false);
+            navigation.navigate('Main');
+          }}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.ratingModalContent}>
+              <MaterialIcons name="star" size={70} color={COLORS.yellow} />
 
-      <View style={styles.starsContainer}>
-        {[1, 2, 3, 4, 5].map((star) => (
-          <TouchableOpacity
-            key={star}
-            onPress={() => {
-              console.log("Star pressed:", star);
-              setRating(star);
-            }}
-            style={styles.starButton}
-          >
-            <MaterialIcons
-              name={star <= rating ? "star" : "star-border"}
-              size={38}
-              color={star <= rating ? COLORS.yellow : COLORS.gray}
-            />
-          </TouchableOpacity>
-        ))}
-      </View>
+              <Text style={styles.modalTitle}>Rate Your Ride</Text>
+              <Text style={styles.ratingSubtitle}>
+                How was your experience with {ride.driverName}?
+              </Text>
 
-      <Text style={styles.ratingText}>
-        {rating === 1 ? "Poor" : 
-         rating === 2 ? "Fair" : 
-         rating === 3 ? "Good" : 
-         rating === 4 ? "Very Good" : 
-         "Excellent"}
-      </Text>
+              <View style={styles.starsContainer}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <TouchableOpacity
+                    key={star}
+                    onPress={() => {
+                      console.log("Star pressed:", star);
+                      setRating(star);
+                    }}
+                    style={styles.starButton}
+                  >
+                    <MaterialIcons
+                      name={star <= rating ? "star" : "star-border"}
+                      size={38}
+                      color={star <= rating ? COLORS.yellow : COLORS.gray}
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
 
-      <TextInput
-        style={styles.feedbackInput}
-        value={feedback}
-        onChangeText={setFeedback}
-        placeholder="Add feedback (optional)"
-        placeholderTextColor={COLORS.gray}
-        multiline
-        numberOfLines={3}
-        maxLength={200}
-      />
+              <Text style={styles.ratingText}>
+                {rating === 1 ? "Poor" :
+                  rating === 2 ? "Fair" :
+                    rating === 3 ? "Good" :
+                      rating === 4 ? "Very Good" :
+                        "Excellent"}
+              </Text>
 
-      <TouchableOpacity 
-        style={styles.submitRatingButton} 
-        onPress={() => {
-          console.log("Submit rating pressed");
-          submitRating();
-        }}
-      >
-        <Text style={styles.btnText}>Submit Rating</Text>
-      </TouchableOpacity>
-      
-      <TouchableOpacity 
-        style={[styles.submitRatingButton, {backgroundColor: COLORS.lightGray, marginTop: 10}]} 
-        onPress={() => {
-          console.log("Skip pressed");
-          setShowRatingModal(false);
-          navigation.navigate('Main');
-        }}
-      >
-        <Text style={{color: COLORS.black, fontSize: 16, fontWeight: 'bold'}}>Skip for Now</Text>
-      </TouchableOpacity>
-    </View>
-  </View>
-</Modal>
+              <TextInput
+                style={styles.feedbackInput}
+                value={feedback}
+                onChangeText={setFeedback}
+                placeholder="Add feedback (optional)"
+                placeholderTextColor={COLORS.gray}
+                multiline
+                numberOfLines={3}
+                maxLength={200}
+              />
+
+              <TouchableOpacity
+                style={styles.submitRatingButton}
+                onPress={() => {
+                  console.log("Submit rating pressed");
+                  submitRating();
+                }}
+              >
+                <Text style={styles.btnText}>Submit Rating</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.submitRatingButton, { backgroundColor: COLORS.lightGray, marginTop: 10 }]}
+                onPress={() => {
+                  console.log("Skip pressed");
+                  setShowRatingModal(false);
+                  navigation.navigate('Main');
+                }}
+              >
+                <Text style={{ color: COLORS.black, fontSize: 16, fontWeight: 'bold' }}>Skip for Now</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -2290,7 +2458,7 @@ function ProfileScreen({ navigation }) {
   const { user, userRole } = useContext(AuthContext);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(false);
-  
+
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
@@ -2324,7 +2492,7 @@ function ProfileScreen({ navigation }) {
     if (!result.canceled) {
       const base64Img = `data:image/jpeg;base64,${result.assets[0].base64}`;
       const collection = userRole === 'driver' ? 'drivers' : 'riders';
-      
+
       try {
         await updateDoc(doc(db, collection, user.uid), {
           [userRole === 'driver' ? 'driverPhoto' : 'photo']: base64Img
@@ -2339,7 +2507,7 @@ function ProfileScreen({ navigation }) {
   const saveProfile = async () => {
     setLoading(true);
     const collection = userRole === 'driver' ? 'drivers' : 'riders';
-    
+
     try {
       await updateDoc(doc(db, collection, user.uid), {
         name,
@@ -2369,20 +2537,20 @@ function ProfileScreen({ navigation }) {
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.navigate('Main')}>
           <Ionicons name="arrow-back" size={24} color={COLORS.black} />
-          </TouchableOpacity>
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>My Profile</Text>
         <TouchableOpacity onPress={() => signOut(auth)}>
           <MaterialIcons name="logout" size={24} color={COLORS.red} />
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={{padding: 20}} showsVerticalScrollIndicator={false}>
-        <View style={{alignItems: 'center', marginBottom: 30}}>
-          <TouchableOpacity onPress={pickProfilePhoto} style={{position: 'relative'}}>
+      <ScrollView contentContainerStyle={{ padding: 20 }} showsVerticalScrollIndicator={false}>
+        <View style={{ alignItems: 'center', marginBottom: 30 }}>
+          <TouchableOpacity onPress={pickProfilePhoto} style={{ position: 'relative' }}>
             {photoUri ? (
-              <Image source={{uri: photoUri}} style={styles.profilePhoto} />
+              <Image source={{ uri: photoUri }} style={styles.profilePhoto} />
             ) : (
-              <View style={[styles.profilePhoto, {backgroundColor: COLORS.lightGray, justifyContent: 'center', alignItems: 'center'}]}>
+              <View style={[styles.profilePhoto, { backgroundColor: COLORS.lightGray, justifyContent: 'center', alignItems: 'center' }]}>
                 <MaterialIcons name="person" size={60} color={COLORS.gray} />
               </View>
             )}
@@ -2390,14 +2558,14 @@ function ProfileScreen({ navigation }) {
               <MaterialIcons name="camera-alt" size={16} color="white" />
             </View>
           </TouchableOpacity>
-          
+
           <Text style={styles.profileName}>{userData.name}</Text>
           <Text style={styles.profileEmail}>{userData.email}</Text>
-          
+
           {userRole === 'driver' && (
             <View style={styles.driverBadge}>
               <MaterialCommunityIcons name="car" size={16} color={COLORS.primary} />
-              <Text style={{color: COLORS.primary, fontWeight: 'bold', marginLeft: 5}}>
+              <Text style={{ color: COLORS.primary, fontWeight: 'bold', marginLeft: 5 }}>
                 {userData.category?.name || 'Driver'}
               </Text>
             </View>
@@ -2437,9 +2605,9 @@ function ProfileScreen({ navigation }) {
           <>
             <Text style={styles.formLabel}>Vehicle</Text>
             <View style={styles.vehicleInfoBox}>
-              <Text style={{fontWeight: 'bold'}}>{userData.make} {userData.model}</Text>
-              <Text style={{color: COLORS.gray}}>{userData.licensePlate}</Text>
-              <Text style={{color: COLORS.gray, fontSize: 12}}>
+              <Text style={{ fontWeight: 'bold' }}>{userData.make} {userData.model}</Text>
+              <Text style={{ color: COLORS.gray }}>{userData.licensePlate}</Text>
+              <Text style={{ color: COLORS.gray, fontSize: 12 }}>
                 {userData.vehicleType} • {userData.hasAC ? 'AC' : 'Non-AC'}
               </Text>
             </View>
@@ -2447,28 +2615,28 @@ function ProfileScreen({ navigation }) {
             {userData.vehiclePhoto && (
               <>
                 <Text style={styles.formLabel}>Vehicle Photo</Text>
-                <Image source={{uri: userData.vehiclePhoto}} style={styles.vehiclePhotoPreview} />
+                <Image source={{ uri: userData.vehiclePhoto }} style={styles.vehiclePhotoPreview} />
               </>
             )}
           </>
         )}
 
-        <TouchableOpacity style={[styles.primaryBtn, {marginTop: 30}]} onPress={saveProfile}>
+        <TouchableOpacity style={[styles.primaryBtn, { marginTop: 30 }]} onPress={saveProfile}>
           {loading ? (
             <ActivityIndicator color="white" />
           ) : (
-            <View style={{flexDirection: 'row', alignItems: 'center'}}>
-              <MaterialIcons name="save" size={20} color="white" style={{marginRight: 8}} />
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <MaterialIcons name="save" size={20} color="white" style={{ marginRight: 8 }} />
               <Text style={styles.btnText}>Save Changes</Text>
             </View>
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={[styles.primaryBtn, {backgroundColor: COLORS.red, marginTop: 15, marginBottom: 30}]} 
+        <TouchableOpacity
+          style={[styles.primaryBtn, { backgroundColor: COLORS.red, marginTop: 15, marginBottom: 30 }]}
           onPress={() => signOut(auth)}
         >
-          <MaterialIcons name="logout" size={20} color="white" style={{marginRight: 8}} />
+          <MaterialIcons name="logout" size={20} color="white" style={{ marginRight: 8 }} />
           <Text style={styles.btnText}>Log Out</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -2484,7 +2652,7 @@ function RootNavigator() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{headerShown: false}}>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!user ? (
           <>
             <Stack.Screen name="Welcome" component={WelcomeScreen} />
@@ -2518,154 +2686,154 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.white, padding: 20 },
   centerContent: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
-  logoContainerShadow: { 
-    shadowColor: '#000', 
-    shadowOffset: {width: 0, height: 10}, 
-    shadowOpacity: 0.3, 
-    shadowRadius: 20, 
-    elevation: 15 
+  logoContainerShadow: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 15
   },
-  logoContainer: { 
-    backgroundColor: COLORS.white, 
-    padding: 30, 
-    borderRadius: 70, 
-    marginBottom: 20 
+  logoContainer: {
+    backgroundColor: COLORS.white,
+    padding: 30,
+    borderRadius: 70,
+    marginBottom: 20
   },
   logoImage: { width: 100, height: 100 },
-  title: { 
-    fontSize: 48, 
-    fontWeight: '900', 
-    color: COLORS.white, 
+  title: {
+    fontSize: 48,
+    fontWeight: '900',
+    color: COLORS.white,
     letterSpacing: 1,
     textShadowColor: 'rgba(0,0,0,0.2)',
-    textShadowOffset: {width: 0, height: 2},
+    textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4
   },
-  slogan: { 
-    fontSize: 18, 
-    fontWeight: '600', 
-    color: '#FFF8E1', 
-    marginTop: 8 
+  slogan: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FFF8E1',
+    marginTop: 8
   },
-  bottomArea: { 
-    padding: 30, 
-    paddingBottom: Platform.OS === 'ios' ? 50 : 30, 
-    width: '100%' 
+  bottomArea: {
+    padding: 30,
+    paddingBottom: Platform.OS === 'ios' ? 50 : 30,
+    width: '100%'
   },
-  whiteBtn: { 
-    backgroundColor: COLORS.white, 
-    padding: 18, 
-    borderRadius: 16, 
-    alignItems: 'center', 
-    flexDirection: 'row', 
-    justifyContent: 'center', 
+  whiteBtn: {
+    backgroundColor: COLORS.white,
+    padding: 18,
+    borderRadius: 16,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
     elevation: 8,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 5
   },
-  glassBtn: { 
-    backgroundColor: 'rgba(255,255,255,0.25)', 
-    borderWidth: 2, 
-    borderColor: 'rgba(255,255,255,0.6)', 
-    padding: 18, 
-    borderRadius: 16, 
-    alignItems: 'center', 
-    marginTop: 15, 
-    flexDirection: 'row', 
-    justifyContent: 'center' 
+  glassBtn: {
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.6)',
+    padding: 18,
+    borderRadius: 16,
+    alignItems: 'center',
+    marginTop: 15,
+    flexDirection: 'row',
+    justifyContent: 'center'
   },
-  orangeText: { 
-    color: COLORS.primary, 
-    fontSize: 16, 
+  orangeText: {
+    color: COLORS.primary,
+    fontSize: 16,
     fontWeight: 'bold'
   },
-  whiteBtnText: { 
-    color: COLORS.white, 
-    fontSize: 16, 
+  whiteBtnText: {
+    color: COLORS.white,
+    fontSize: 16,
     fontWeight: 'bold'
   },
 
-  authHeader: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
+  authHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
     padding: 20,
     paddingTop: Platform.OS === 'android' ? 50 : 20,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.lightGray
   },
-  headerTitle: { 
-    fontSize: 20, 
-    fontWeight: 'bold', 
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
     color: COLORS.black
   },
-  authTitle: { 
-    fontSize: 24, 
-    fontWeight: 'bold', 
+  authTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
     color: COLORS.black,
     textAlign: 'center'
   },
-  input: { 
-    backgroundColor: COLORS.lightGray, 
-    padding: 15, 
-    borderRadius: 12, 
-    marginBottom: 15, 
-    fontSize: 16 
+  input: {
+    backgroundColor: COLORS.lightGray,
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 15,
+    fontSize: 16
   },
-  driverSection: { 
-    backgroundColor: '#FFF8E1', 
-    padding: 20, 
-    borderRadius: 15, 
+  driverSection: {
+    backgroundColor: '#FFF8E1',
+    padding: 20,
+    borderRadius: 15,
     marginTop: 10,
     marginBottom: 15
   },
-  sectionTitle: { 
-    fontSize: 18, 
-    fontWeight: 'bold', 
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
     marginBottom: 15,
     color: COLORS.black
   },
-  label: { 
-    fontWeight: '600', 
-    marginBottom: 8, 
+  label: {
+    fontWeight: '600',
+    marginBottom: 8,
     marginTop: 10,
     color: COLORS.gray,
     fontSize: 14
   },
-  pillContainer: { 
-    flexDirection: 'row', 
-    gap: 8, 
-    marginVertical: 10 
+  pillContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginVertical: 10
   },
-  pill: { 
-    flex: 1, 
-    alignItems: 'center', 
-    paddingVertical: 12, 
-    borderWidth: 2, 
-    borderColor: COLORS.gray, 
-    borderRadius: 10 
+  pill: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderWidth: 2,
+    borderColor: COLORS.gray,
+    borderRadius: 10
   },
-  pillActive: { 
-    backgroundColor: COLORS.primary, 
-    borderColor: COLORS.primary 
+  pillActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary
   },
-  pillText: { 
-    fontWeight: '600', 
-    color: COLORS.black, 
-    fontSize: 14 
+  pillText: {
+    fontWeight: '600',
+    color: COLORS.black,
+    fontSize: 14
   },
-  checkboxRow: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginTop: 15,
     padding: 10
   },
-  categoryBadge: { 
-    backgroundColor: COLORS.white, 
-    padding: 15, 
-    borderRadius: 10, 
+  categoryBadge: {
+    backgroundColor: COLORS.white,
+    padding: 15,
+    borderRadius: 10,
     marginTop: 15,
     borderWidth: 1,
     borderColor: COLORS.primary,
@@ -2673,18 +2841,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center'
   },
-  categoryText: { 
-    color: COLORS.primary, 
+  categoryText: {
+    color: COLORS.primary,
     fontWeight: 'bold',
     textAlign: 'center'
   },
-  photoUploadBox: { 
-    width: '100%', 
-    height: 150, 
-    backgroundColor: COLORS.white, 
-    borderRadius: 12, 
-    justifyContent: 'center', 
-    alignItems: 'center', 
+  photoUploadBox: {
+    width: '100%',
+    height: 150,
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginTop: 8,
     marginBottom: 15,
     borderWidth: 2,
@@ -2692,348 +2860,352 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     overflow: 'hidden'
   },
-  uploadedImage: { 
-    width: '100%', 
-    height: '100%' 
+  uploadedImage: {
+    width: '100%',
+    height: '100%'
   },
-  uploadPlaceholder: { 
-    alignItems: 'center' 
+  uploadPlaceholder: {
+    alignItems: 'center'
   },
-  primaryBtn: { 
-    backgroundColor: COLORS.primary, 
-    padding: 16, 
-    borderRadius: 12, 
-    alignItems: 'center', 
+  primaryBtn: {
+    backgroundColor: COLORS.primary,
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
     marginTop: 15,
     shadowColor: COLORS.primary,
-    shadowOffset: {width: 0, height: 4},
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 5,
     elevation: 5
   },
-  btnText: { 
-    color: COLORS.white, 
-    fontSize: 16, 
-    fontWeight: 'bold' 
+  btnText: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: 'bold'
   },
 
-  modalOverlay: { 
-    flex: 1, 
-    justifyContent: 'center', 
-    alignItems: 'center', 
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.6)',
     padding: 20
   },
-  modalContent: { 
-    width: '100%', 
+  modalContent: {
+    width: '100%',
     maxWidth: 400,
-    backgroundColor: COLORS.white, 
-    padding: 30, 
-    borderRadius: 20, 
+    backgroundColor: COLORS.white,
+    padding: 30,
+    borderRadius: 20,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 10},
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.3,
     shadowRadius: 20,
     elevation: 20
   },
-  modalTitle: { 
-    fontSize: 22, 
-    fontWeight: 'bold', 
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
     marginTop: 15,
     marginBottom: 10,
     color: COLORS.black,
     textAlign: 'center'
   },
-  modalText: { 
-    textAlign: 'center', 
-    color: COLORS.gray, 
+  modalText: {
+    textAlign: 'center',
+    color: COLORS.gray,
     lineHeight: 22,
     marginBottom: 20
   },
 
-  pendingTitle: { 
-    fontSize: 24, 
-    fontWeight: 'bold', 
+  pendingTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
     marginTop: 20,
     marginBottom: 10,
     color: COLORS.black,
     textAlign: 'center'
   },
-  pendingText: { 
-    textAlign: 'center', 
-    color: COLORS.gray, 
+  pendingText: {
+    textAlign: 'center',
+    color: COLORS.gray,
     paddingHorizontal: 20,
     lineHeight: 22
   },
 
-  dashboardHeader: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
+  dashboardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     padding: 20,
     paddingTop: Platform.OS === 'android' ? 50 : 20,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.lightGray,
     backgroundColor: COLORS.white
   },
-  statsContainer: { 
-    flexDirection: 'row', 
+  statsContainer: {
+    flexDirection: 'row',
     padding: 15,
     backgroundColor: COLORS.background
   },
-  statBox: { 
-    flex: 1, 
-    alignItems: 'center', 
+  statBox: {
+    flex: 1,
+    alignItems: 'center',
     padding: 15,
     backgroundColor: COLORS.white,
     marginHorizontal: 5,
     borderRadius: 12,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 2
   },
-  statValue: { 
-    fontSize: 18, 
+  statValue: {
+    fontSize: 18,
     fontWeight: 'bold',
     color: COLORS.black,
     marginTop: 8
   },
-  statLabel: { 
-    color: COLORS.gray, 
+  statLabel: {
+    color: COLORS.gray,
     fontSize: 12,
     marginTop: 5
   },
-  requestCard: { 
-    backgroundColor: COLORS.white, 
-    padding: 20, 
-    borderRadius: 15, 
+  requestCard: {
+    backgroundColor: COLORS.white,
+    padding: 20,
+    borderRadius: 15,
     marginBottom: 15,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3
   },
-  cardHeader: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 15
   },
-  cardTitle: { 
-    fontSize: 16, 
+  cardTitle: {
+    fontSize: 16,
     fontWeight: 'bold',
     color: COLORS.black
   },
-  priceBadge: { 
-    backgroundColor: '#E8F5E9', 
-    paddingHorizontal: 12, 
-    paddingVertical: 6, 
-    borderRadius: 8 
+  priceBadge: {
+    backgroundColor: '#E8F5E9',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8
   },
-  priceText: { 
-    color: COLORS.green, 
+  priceText: {
+    color: COLORS.green,
     fontWeight: 'bold',
     fontSize: 15
   },
-  routeContainer: { 
-    marginVertical: 10 
+  routeContainer: {
+    marginVertical: 10
   },
-  routeRow: { 
-    flexDirection: 'row', 
+  routeRow: {
+    flexDirection: 'row',
     alignItems: 'center',
     marginVertical: 5
   },
-  routeDot: { 
-    width: 10, 
-    height: 10, 
-    borderRadius: 5, 
-    marginRight: 10 
+  routeDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 10
   },
-  routeLine: { 
-    width: 2, 
-    height: 20, 
-    backgroundColor: COLORS.lightGray, 
+  routeLine: {
+    width: 2,
+    height: 20,
+    backgroundColor: COLORS.lightGray,
     marginLeft: 4,
     marginVertical: 2
   },
-  routeText: { 
+  routeText: {
     flex: 1,
     color: COLORS.black,
     fontSize: 14
   },
-  infoChip: { 
-    flexDirection: 'row', 
+  infoChip: {
+    flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.lightGray,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8
   },
-  bidButton: { 
-    backgroundColor: COLORS.primary, 
-    padding: 14, 
-    borderRadius: 10, 
+  bidButton: {
+    backgroundColor: COLORS.primary,
+    padding: 14,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
     marginTop: 15
   },
-  emptyState: { 
-    alignItems: 'center', 
-    marginTop: 100 
+  emptyState: {
+    alignItems: 'center',
+    marginTop: 100
   },
-  emptyText: { 
-    color: COLORS.gray, 
+  emptyText: {
+    color: COLORS.gray,
     fontSize: 16,
     marginTop: 15,
     fontWeight: '600'
   },
 
-  bidModalContent: { 
-    width: '100%', 
+  bidModalContent: {
+    width: '100%',
     maxWidth: 400,
-    backgroundColor: COLORS.white, 
-    padding: 25, 
+    backgroundColor: COLORS.white,
+    padding: 25,
     borderRadius: 20,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 10},
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.3,
     shadowRadius: 20,
     elevation: 20
   },
-  fareInfo: { 
-    alignItems: 'center', 
+  fareInfo: {
+    alignItems: 'center',
     marginVertical: 15,
     padding: 15,
     backgroundColor: COLORS.lightGray,
     borderRadius: 10,
     width: '100%'
   },
-  estimatedFare: { 
-    fontSize: 28, 
-    fontWeight: 'bold', 
+  estimatedFare: {
+    fontSize: 28,
+    fontWeight: 'bold',
     color: COLORS.primary,
     marginTop: 5
   },
-  bidInput: { 
-    borderWidth: 2, 
-    borderColor: COLORS.primary, 
-    fontSize: 24, 
-    textAlign: 'center', 
-    padding: 15, 
+  bidInput: {
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+    fontSize: 24,
+    textAlign: 'center',
+    padding: 15,
     borderRadius: 12,
     marginBottom: 20,
     fontWeight: 'bold'
   },
-  modalButton: { 
-    padding: 16, 
-    borderRadius: 12, 
+  modalButton: {
+    padding: 16,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     minWidth: 100
   },
 
-  map: { 
-    flex: 1 
+  map: {
+    flex: 1
   },
-  profileButton: { 
-    position: 'absolute', 
-    top: Platform.OS === 'android' ? 50 : 60, 
-    right: 20, 
-    backgroundColor: COLORS.white, 
-    padding: 12, 
+  profileButton: {
+    position: 'absolute',
+    top: Platform.OS === 'android' ? 50 : 60,
+    right: 20,
+    backgroundColor: COLORS.white,
+    padding: 12,
     borderRadius: 12,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 5
   },
-  markerContainer: { 
-    alignItems: 'center' 
+  markerContainer: {
+    alignItems: 'center'
   },
-  markerDot: { 
-    width: 20, 
-    height: 20, 
+  markerDot: {
+    width: 20,
+    height: 20,
     borderRadius: 10,
-    borderWidth: 3, 
+    borderWidth: 3,
     borderColor: COLORS.white,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 3,
     elevation: 5
   },
 
-  bottomSheet: { 
-    position: 'absolute', 
-    bottom: 0, 
-    width: '100%', 
-    backgroundColor: COLORS.white, 
-    borderTopLeftRadius: 25, 
-    borderTopRightRadius: 25, 
+  bottomSheet: {
+    position: 'absolute',
+    left: 10,
+    right: 10,
+    borderRadius: 25,
     padding: 20,
     paddingHorizontal: 15,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.6)',
+    backgroundColor: 'rgba(255,255,255,0.75)', // Glass effect base
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: -3},
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 20
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10
   },
-   
-  sheetTitle: { 
-    fontSize: 20, 
+
+  sheetTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
     color: COLORS.black,
     marginBottom: 20
   },
 
-  sheetHeader: { 
-    flexDirection: 'row', 
+  sheetHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20
   },
 
-  locationInputContainer: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: COLORS.lightGray, 
-    padding: 15, 
-    borderRadius: 12, 
-    marginBottom: 10 
+  locationInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.5)', // Semi-transparent
+    padding: 12,
+    borderRadius: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)'
   },
-  locationDot: { 
-    width: 10, 
-    height: 10, 
-    borderRadius: 5, 
-    marginRight: 10 
+  locationDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 10
   },
-  locationInput: { 
-    flex: 1, 
+  locationInput: {
+    flex: 1,
     fontSize: 15,
     color: COLORS.black
   },
-  suggestionItem: { 
-    flexDirection: 'row', 
+  suggestionItem: {
+    flexDirection: 'row',
     alignItems: 'center',
-    padding: 15, 
-    borderBottomWidth: 1, 
-    borderBottomColor: COLORS.lightGray 
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.lightGray
   },
-  suggestionText: { 
-    flex: 1, 
+  suggestionText: {
+    flex: 1,
     marginLeft: 10,
     color: COLORS.black,
     fontSize: 14
   },
-  currentLocationButton: { 
-    flexDirection: 'row', 
+  currentLocationButton: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 15,
@@ -3041,124 +3213,124 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginTop: 10
   },
-  continueButton: { 
-    backgroundColor: COLORS.primary, 
-    padding: 16, 
-    borderRadius: 12, 
+  continueButton: {
+    backgroundColor: COLORS.primary,
+    padding: 16,
+    borderRadius: 12,
     alignItems: 'center',
     marginTop: 20
   },
 
-  categoryCard: { 
-    width: 140, 
-    padding: 20, 
-    backgroundColor: COLORS.white, 
-    borderRadius: 15, 
+  categoryCard: {
+    width: 140,
+    padding: 20,
+    backgroundColor: COLORS.white,
+    borderRadius: 15,
     marginRight: 15,
-    borderWidth: 2, 
-    borderColor: COLORS.lightGray, 
+    borderWidth: 2,
+    borderColor: COLORS.lightGray,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 2
   },
-  categoryCardActive: { 
-    borderColor: COLORS.primary, 
-    backgroundColor: '#FFF3E0' 
+  categoryCardActive: {
+    borderColor: COLORS.primary,
+    backgroundColor: '#FFF3E0'
   },
-  categoryName: { 
-    fontWeight: 'bold', 
+  categoryName: {
+    fontWeight: 'bold',
     marginTop: 12,
     textAlign: 'center',
     fontSize: 12,
     color: COLORS.black
   },
-  categoryPrice: { 
-    color: COLORS.primary, 
-    fontWeight: 'bold', 
+  categoryPrice: {
+    color: COLORS.primary,
+    fontWeight: 'bold',
     fontSize: 16,
     marginTop: 5
   },
-  fareBreakdown: { 
-    backgroundColor: COLORS.lightGray, 
-    padding: 20, 
+  fareBreakdown: {
+    backgroundColor: COLORS.lightGray,
+    padding: 20,
     borderRadius: 12,
     marginBottom: 15
   },
-  fareLabel: { 
-    color: COLORS.gray, 
+  fareLabel: {
+    color: COLORS.gray,
     fontSize: 14,
     marginBottom: 5
   },
-  fareAmount: { 
-    fontSize: 32, 
-    fontWeight: 'bold', 
-    color: COLORS.primary 
+  fareAmount: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: COLORS.primary
   },
-  fareNote: { 
-    color: COLORS.gray, 
+  fareNote: {
+    color: COLORS.gray,
     fontSize: 12
   },
-  requestButton: { 
-    backgroundColor: COLORS.primary, 
-    padding: 16, 
-    borderRadius: 12, 
-    alignItems: 'center' 
+  requestButton: {
+    backgroundColor: COLORS.primary,
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center'
   },
-  errorContainer: { 
-    alignItems: 'center', 
-    padding: 30 
+  errorContainer: {
+    alignItems: 'center',
+    padding: 30
   },
-  errorTitle: { 
-    fontSize: 20, 
-    fontWeight: 'bold', 
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
     color: COLORS.red,
     marginTop: 15,
     marginBottom: 10
   },
-  errorText: { 
-    textAlign: 'center', 
+  errorText: {
+    textAlign: 'center',
     color: COLORS.gray,
     lineHeight: 20
   },
 
-  offersTitle: { 
-    fontSize: 16, 
+  offersTitle: {
+    fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 15,
     color: COLORS.black
   },
-  offerCard: { 
-    backgroundColor: COLORS.background, 
-    padding: 15, 
-    borderRadius: 12, 
+  offerCard: {
+    backgroundColor: COLORS.background,
+    padding: 15,
+    borderRadius: 12,
     marginBottom: 12,
     borderWidth: 1,
     borderColor: COLORS.lightGray
   },
 
-  driverPhoto: { 
-    width: 50, 
-    height: 50, 
+  driverPhoto: {
+    width: 50,
+    height: 50,
     borderRadius: 25,
     marginRight: 10
   },
-  vehiclePhoto: { 
-    width: 80, 
-    height: 50, 
-    borderRadius: 8 
+  vehiclePhoto: {
+    width: 80,
+    height: 50,
+    borderRadius: 8
   },
-  driverName: { 
-    fontWeight: 'bold', 
+  driverName: {
+    fontWeight: 'bold',
     fontSize: 15,
     color: COLORS.black,
     flexShrink: 1 // CRITICAL FIX: prevents truncation/overflow
   },
 
-  licensePlate: { 
-    color: COLORS.gray, 
+  licensePlate: {
+    color: COLORS.gray,
     fontSize: 12,
     marginTop: 3
   },
@@ -3167,22 +3339,22 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 3
   },
-  offerPrice: { 
-    fontSize: 17, 
-    fontWeight: 'bold', 
+  offerPrice: {
+    fontSize: 17,
+    fontWeight: 'bold',
     color: COLORS.primary,
     marginBottom: 8
   },
-  acceptButton: { 
-    backgroundColor: COLORS.green, 
-    paddingVertical: 8, 
-    paddingHorizontal: 16, 
+  acceptButton: {
+    backgroundColor: COLORS.green,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     borderRadius: 8,
     minWidth: 85,
     alignItems: 'center'
   },
 
-  rideHeader: { 
+  rideHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 15,
@@ -3192,14 +3364,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.lightGray
   },
-  rideStatus: { 
+  rideStatus: {
     fontSize: 17,
     fontWeight: 'bold',
     color: COLORS.black,
     marginBottom: 3
   },
-  driverInfoCard: { 
-    flexDirection: 'row', 
+  driverInfoCard: {
+    flexDirection: 'row',
     alignItems: 'center',
     padding: 15,
     paddingHorizontal: 20,
@@ -3207,28 +3379,28 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.lightGray
   },
-  driverInfoPhoto: { 
-    width: 50, 
-    height: 50, 
+  driverInfoPhoto: {
+    width: 50,
+    height: 50,
     borderRadius: 25,
     marginRight: 15
   },
-  driverInfoName: { 
-    fontWeight: 'bold', 
+  driverInfoName: {
+    fontWeight: 'bold',
     fontSize: 15,
     color: COLORS.black,
     marginBottom: 2,
     flexShrink: 1 // CRITICAL FIX
   },
-  vehicleInfoPhoto: { 
-    width: 80, 
-    height: 50, 
-    borderRadius: 8 
+  vehicleInfoPhoto: {
+    width: 80,
+    height: 50,
+    borderRadius: 8
   },
-  actionButton: { 
-    backgroundColor: COLORS.primary, 
-    padding: 16, 
-    borderRadius: 12, 
+  actionButton: {
+    backgroundColor: COLORS.primary,
+    padding: 16,
+    borderRadius: 12,
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center'
@@ -3247,52 +3419,52 @@ const styles = StyleSheet.create({
     color: COLORS.black,
     marginLeft: 8
   },
-  chatHeader: { 
-    fontSize: 15, 
+  chatHeader: {
+    fontSize: 15,
     fontWeight: 'bold',
     color: COLORS.black
   },
-  messageBubble: { 
-    padding: 10, 
+  messageBubble: {
+    padding: 10,
     paddingHorizontal: 12,
-    borderRadius: 15, 
-    marginVertical: 4, 
+    borderRadius: 15,
+    marginVertical: 4,
     maxWidth: '80%'
   },
-  myMessage: { 
-    alignSelf: 'flex-end', 
-    backgroundColor: COLORS.primary 
+  myMessage: {
+    alignSelf: 'flex-end',
+    backgroundColor: COLORS.primary
   },
-  theirMessage: { 
-    alignSelf: 'flex-start', 
-    backgroundColor: COLORS.lightGray 
+  theirMessage: {
+    alignSelf: 'flex-start',
+    backgroundColor: COLORS.lightGray
   },
-  messageText: { 
+  messageText: {
     fontSize: 14,
     color: COLORS.black,
     lineHeight: 19
   },
-  messageInputContainer: { 
-    flexDirection: 'row', 
-    padding: 15, 
-    borderTopWidth: 1, 
+  messageInputContainer: {
+    flexDirection: 'row',
+    padding: 15,
+    borderTopWidth: 1,
     borderTopColor: COLORS.lightGray,
     alignItems: 'center',
     backgroundColor: COLORS.white
   },
-  messageInput: { 
-    flex: 1, 
-    backgroundColor: COLORS.lightGray, 
-    padding: 12, 
-    borderRadius: 20, 
+  messageInput: {
+    flex: 1,
+    backgroundColor: COLORS.lightGray,
+    padding: 12,
+    borderRadius: 20,
     marginRight: 10,
     fontSize: 15,
     maxHeight: 100
   },
 
-  header: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
     paddingTop: Platform.OS === 'android' ? 50 : 20,
@@ -3300,93 +3472,93 @@ const styles = StyleSheet.create({
     borderBottomColor: COLORS.lightGray,
     backgroundColor: COLORS.white
   },
-  profilePhoto: { 
-    width: 120, 
-    height: 120, 
+  profilePhoto: {
+    width: 120,
+    height: 120,
     borderRadius: 60,
-    borderWidth: 3, 
+    borderWidth: 3,
     borderColor: COLORS.primary
   },
-  editPhotoIcon: { 
-    position: 'absolute', 
-    bottom: 0, 
-    right: 0, 
-    backgroundColor: COLORS.primary, 
-    padding: 10, 
+  editPhotoIcon: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: COLORS.primary,
+    padding: 10,
     borderRadius: 20,
-    borderWidth: 3, 
+    borderWidth: 3,
     borderColor: COLORS.white
   },
-  profileName: { 
-    fontSize: 24, 
+  profileName: {
+    fontSize: 24,
     fontWeight: 'bold',
     marginTop: 15,
     color: COLORS.black,
     textAlign: 'center'
   },
-  profileEmail: { 
+  profileEmail: {
     color: COLORS.gray,
     fontSize: 14,
     marginTop: 5
   },
-  driverBadge: { 
+  driverBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF3E0', 
-    paddingHorizontal: 15, 
-    paddingVertical: 8, 
+    backgroundColor: '#FFF3E0',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
     borderRadius: 20,
     marginTop: 10,
     borderWidth: 1,
     borderColor: COLORS.primary
   },
-  profileStats: { 
-    flexDirection: 'row', 
+  profileStats: {
+    flexDirection: 'row',
     backgroundColor: COLORS.background,
     padding: 15,
     marginBottom: 20
   },
-  profileStatBox: { 
-    flex: 1, 
+  profileStatBox: {
+    flex: 1,
     alignItems: 'center',
     backgroundColor: COLORS.white,
     padding: 15,
     marginHorizontal: 5,
     borderRadius: 12,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 2
   },
-  formLabel: { 
-    fontWeight: '600', 
+  formLabel: {
+    fontWeight: '600',
     marginBottom: 8,
     marginTop: 15,
     color: COLORS.gray,
     fontSize: 14
   },
-  formInput: { 
-    backgroundColor: COLORS.lightGray, 
-    padding: 15, 
+  formInput: {
+    backgroundColor: COLORS.lightGray,
+    padding: 15,
     borderRadius: 12,
     fontSize: 15,
     color: COLORS.black
   },
-  vehicleInfoBox: { 
-    backgroundColor: COLORS.lightGray, 
-    padding: 15, 
-    borderRadius: 12 
+  vehicleInfoBox: {
+    backgroundColor: COLORS.lightGray,
+    padding: 15,
+    borderRadius: 12
   },
-  ratingModalContent: { 
-    width: '88%', 
+  ratingModalContent: {
+    width: '88%',
     maxWidth: 400,
-    backgroundColor: COLORS.white, 
-    padding: 30, 
-    borderRadius: 20, 
+    backgroundColor: COLORS.white,
+    padding: 30,
+    borderRadius: 20,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 10},
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.3,
     shadowRadius: 20,
     elevation: 20
@@ -3433,9 +3605,9 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center'
   },
-  vehiclePhotoPreview: { 
-    width: '100%', 
-    height: 150, 
+  vehiclePhotoPreview: {
+    width: '100%',
+    height: 150,
     borderRadius: 12,
     marginTop: 8
   }
